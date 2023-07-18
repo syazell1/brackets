@@ -1,5 +1,7 @@
 using Blog.Commons.Exceptions;
 using Blog.Commons.Models;
+using Blog.Features.Comments.Dtos;
+using Blog.Features.Comments.Queries.GetCommentsByPostId.v1;
 using Blog.Features.Posts.Commands.CreatePost.v1;
 using Blog.Features.Posts.Dtos;
 using Blog.Features.Posts.Queries.GetPostById.v1;
@@ -92,6 +94,39 @@ public sealed class PostsController : BaseController
         {
             return ex switch {
                 ValidationException validation => BadRequest(new {errors = validation.Errors}),
+                _ => StatusCode(StatusCodes.Status500InternalServerError, new {message = ex.Message})
+            };
+        }
+    }
+
+    [HttpGet("{postId}/comments")]
+    public async Task<ActionResult<PagedList<CommentDto>>> GetPostsComments(
+        string postId,
+        string? sortColumn,
+        string? sortOrder,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            GetCommentsByPostIdQuery request = new(
+                postId,
+                sortColumn,
+                sortOrder,
+                page,
+                pageSize
+            );
+
+            var result = await mediator.Send(request, cancellationToken);
+
+            return Ok(result);
+        }
+        catch(Exception ex)
+        {
+            return ex switch {
+                NotFoundException notFound => NotFound(new {message = notFound.Message}),
                 _ => StatusCode(StatusCodes.Status500InternalServerError, new {message = ex.Message})
             };
         }
