@@ -3,11 +3,10 @@
 import Card from "@/components/layout/Card"
 import { PostDetails } from "../types/Posts"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { CalendarDays, MoreVertical } from "lucide-react"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { forwardRef } from "react"
 import Link from "next/link"
+import UserHoverCard from "@/features/Users/components/UserHoverCard"
+import PostDropDownMenu from "./PostDropDownMenu"
 
 type PostItemType = {
     data: PostDetails
@@ -28,50 +27,12 @@ const PostItem = forwardRef<HTMLElement, PostItemType>((props : PostItemType, re
                                 </Avatar>
                             </div>
                             <div>
-                                <HoverCard>
-                                    <HoverCardTrigger asChild>
-                                        {/* <Button variant="link">@nextjs</Button> */}
-                                        <p className="text-sm font-semibold hover:underline cursor-pointer">@{username}</p>
-                                    </HoverCardTrigger>
-                                    <HoverCardContent className="w-80">
-                                        <div className="flex gap-4">
-                                            <Avatar>
-                                              <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                                              <AvatarFallback>CN</AvatarFallback>
-                                            </Avatar>
-                                            <div className="">
-                                                <h4 className="text-sm font-semibold">@{username}</h4>
-                                                <p className="text-sm">
-                                                    Some bio can be inserted in here
-                                                </p>
-                                                <div className="flex items-center pt-2">
-                                                    <CalendarDays className="mr-2 h-4 w-4 opacity-70" />{" "}
-                                                    <span className="text-xs text-muted-foreground">
-                                                        Joined December 2021
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </HoverCardContent>
-                                </HoverCard>
+                                <UserHoverCard username={username} />
                                 <p className="text-sm">{date}</p>
                             </div>
                         </div>
                         <div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger>
-                                    <div>
-                                        <MoreVertical size={25} />
-                                    </div>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    <DropdownMenuLabel>Post Menu</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="cursor-pointer" >Copy Post Link</DropdownMenuItem>
-                                    <DropdownMenuItem className="cursor-pointer">Update Post</DropdownMenuItem>
-                                    {/* <DropdownMenuItem className="cursor-pointer" onClick={deletePostHandler} >Delete Post</DropdownMenuItem> */}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <PostDropDownMenu id={id}/>
                         </div>
                     </header>
                     <main className="mx-[20px]">
@@ -95,6 +56,7 @@ const PostItem = forwardRef<HTMLElement, PostItemType>((props : PostItemType, re
     return postItemContent;
 })
 
+PostItem.displayName = "PostItem"
 
 export default PostItem
 
