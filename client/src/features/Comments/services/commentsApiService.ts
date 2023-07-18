@@ -9,6 +9,12 @@ export const getCommentsByPostId = async (page: number, postId : string) => {
     return res.data
 }
 
+export const getCommentById = async (commentId: string) => {
+    const res = await client.get<CommentDetails>(`${COMMENTS_URL}/${commentId}`)
+
+    return res.data
+}
+
 export const addComment = async (data : AddCommentInput) => {
     const res = await client.post(`${COMMENTS_URL}`, data)
 
