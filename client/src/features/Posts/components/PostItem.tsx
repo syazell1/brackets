@@ -36,7 +36,7 @@ const PostItem = forwardRef<HTMLElement, PostItemType>((props : PostItemType, re
                         </div>
                     </header>
                     <main className="mx-[20px]">
-                        <Link href={`posts/${id}`} className="text-2xl font-semibold hover:underline">{title}</Link>
+                        <Link href={`/posts/${id}`} className="text-2xl font-semibold hover:underline">{title}</Link>
                     </main>
 
                     <footer>
