@@ -1,5 +1,7 @@
 import Container from "@/components/layout/Container"
 import CreatePostForm from "@/features/Posts/components/CreatePostForm"
+import AuthGuard from "@/providers/AuthGuard";
+
 
 const CreatePostPage = () => {
     return (
@@ -9,4 +11,4 @@ const CreatePostPage = () => {
     );
 }
 
-export default CreatePostPage;
+export default AuthGuard(CreatePostPage);
