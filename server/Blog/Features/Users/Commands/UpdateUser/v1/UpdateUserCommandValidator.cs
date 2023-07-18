@@ -8,15 +8,7 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
     {
         RuleFor(x => x.Username) 
             .MinimumLength(4)
-            .MaximumLength(12)
-            .NotNull()
-            .NotEmpty();
-        
-        RuleFor(x => x.Password) 
-            .MinimumLength(4)
-            .MaximumLength(12)
-            .NotNull()
-            .NotEmpty();
+            .MaximumLength(12);
 
         RuleFor(x => x.FirstName) 
             .MinimumLength(4);

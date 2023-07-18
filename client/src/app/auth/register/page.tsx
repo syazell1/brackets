@@ -1,5 +1,6 @@
 import Container from "@/components/layout/Container"
 import RegisterForm from "@/features/Auth/components/RegisterForm"
+import AuthGuard from "@/providers/AuthGuard"
 
 const RegisterPage = () => {
     return (
@@ -9,4 +10,4 @@ const RegisterPage = () => {
     )
 }
 
-export default RegisterPage
+export default AuthGuard(RegisterPage, false) 

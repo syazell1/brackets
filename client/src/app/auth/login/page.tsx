@@ -1,5 +1,6 @@
 import Container from "@/components/layout/Container"
 import LoginForm from "@/features/Auth/components/LoginForm"
+import AuthGuard from "@/providers/AuthGuard"
 
 const LoginPage = () => {
     return (
@@ -9,4 +10,4 @@ const LoginPage = () => {
     )
 }
 
-export default LoginPage
+export default AuthGuard(LoginPage, false) 

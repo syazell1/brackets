@@ -10,6 +10,8 @@ using Blog.Features.Users.Services;
 using Blog.Features.Auth.Services;
 using Blog.Features.Posts.Interfaces;
 using Blog.Features.Users.Repositories;
+using Blog.Features.Comments.Interfaces;
+using Blog.Features.Comments.Repositories;
 
 namespace Blog.Extensions;
 
@@ -20,6 +22,7 @@ public static class Infrastructure
         services.AddDbContext<ApplicationDbContext>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IPostRepository, PostRepository>();
+        services.AddScoped<ICommentRepository, CommentRepository>();
         services.AddScoped<IUsersRepository, UsersRepository>();
         services.AddScoped<IUsersInfoRepository, UsersInfoRepository>();
         services.AddScoped<IPasswordService, PasswordService>();

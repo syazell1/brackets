@@ -4,6 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { UserInfo } from "../types/Users";
 import { Button } from "@/components/ui/button";
 import { useLogout } from "@/features/Auth/hooks/useLogout";
+import Link from "next/link";
 
 type UserMenuType = {
     data: UserInfo
@@ -23,9 +24,11 @@ const UserMenu = ({ data: { username } }: UserMenuType) => {
                 <DropdownMenuContent>
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                        <Link href={`profile/${username}`}>Profile</Link> 
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => {mutate()}}>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => {mutate()}}>
                         {isLoading ? "Loading..." : "Logout"}
                     </DropdownMenuItem>
                 </DropdownMenuContent>

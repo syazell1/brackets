@@ -35,7 +35,6 @@ sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand, Unit>
             throw new ConflictException("Username already exists.");
 
         user.Username = request.Username;
-        user.Password = request.Password;
 
         usersInfo.FirstName = request.FirstName;
         usersInfo.LastName = request.LastName;
