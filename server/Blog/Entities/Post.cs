@@ -15,4 +15,5 @@ public sealed class Post : BaseEntity
     public User? Owner { get; set; }
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     public ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
+    public ICollection<LikePost> Likes { get; set; } = new List<LikePost>();
 }

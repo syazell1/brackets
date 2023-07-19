@@ -14,4 +14,5 @@ public sealed class Comment : BaseEntity
     [Column("owner_id")]
     public Guid OwnerId { get; set; } 
     public User? Owner { get; set; }
+    public ICollection<LikeComment> Likes { get; set; } = new List<LikeComment>();
 }

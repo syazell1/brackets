@@ -12,6 +12,8 @@ using Blog.Features.Posts.Interfaces;
 using Blog.Features.Users.Repositories;
 using Blog.Features.Comments.Interfaces;
 using Blog.Features.Comments.Repositories;
+using Blog.Features.Likes.Repositories;
+using Blog.Features.Likes.Interfaces;
 
 namespace Blog.Extensions;
 
@@ -25,6 +27,7 @@ public static class Infrastructure
         services.AddScoped<ICommentRepository, CommentRepository>();
         services.AddScoped<IUsersRepository, UsersRepository>();
         services.AddScoped<IUsersInfoRepository, UsersInfoRepository>();
+        services.AddScoped<ILikePostRepository, LikePostRepository>();
         services.AddScoped<IPasswordService, PasswordService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IJwtService, JwtService>();
