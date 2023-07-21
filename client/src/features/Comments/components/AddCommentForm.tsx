@@ -9,15 +9,17 @@ import { AddCommentInput } from "../types/Comments"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { addCommentSchema } from "../schemas/commentsSchema"
 import { ErrorMessage } from "@/components/ui/error-message"
-import { useEffect } from "react"
+import { useContext, useEffect } from "react"
 import { useGetCurrentUser } from "@/features/Auth/hooks/useGetCurrentUser"
+import { authProviderContext } from "@/providers/AuthProvider"
 
 type AddCommentFormType = {
     postId : string
 }
 
 const AddCommentForm = ({postId}: AddCommentFormType) => {
-    const {data, isLoading: userDataLoading} = useGetCurrentUser();
+    // const {data, isLoading: userDataLoading} = useGetCurrentUser();
+    const {data, isLoading: userDataLoading} = useContext(authProviderContext)
     const {reset, handleSubmit, register, formState: {errors}} = useForm<AddCommentInput>({
         resolver: zodResolver(addCommentSchema)
     });
@@ -28,7 +30,7 @@ const AddCommentForm = ({postId}: AddCommentFormType) => {
         {
             reset()
         }
-    }, [isSuccess])
+    }, [isSuccess, reset])
 
     const addCommentHandler = (data : AddCommentInput) => {
 
@@ -41,7 +43,7 @@ const AddCommentForm = ({postId}: AddCommentFormType) => {
     if(userDataLoading && isLoading)
         return <p>Loading...</p>
 
-    if(data)
+    if(data.username)
          return (
             <Card>
                 <form onSubmit={handleSubmit(addCommentHandler)} className="flex flex-col gap-2">
