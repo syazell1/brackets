@@ -59,6 +59,70 @@ namespace Blog.Migrations
                     b.ToTable("comment");
                 });
 
+            modelBuilder.Entity("Blog.Entities.LikeComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CommentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("comment_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("like_comment");
+                });
+
+            modelBuilder.Entity("Blog.Entities.LikePost", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("post_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("like_post");
+                });
+
             modelBuilder.Entity("Blog.Entities.Post", b =>
                 {
                     b.Property<Guid>("Id")
@@ -154,80 +218,80 @@ namespace Blog.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("7d3a5a0f-20ef-4341-a732-9cc3b99119a8"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7152),
+                            Id = new Guid("0e985f5e-30ff-45c3-9642-a6510f5e9bcd"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3516),
                             Name = "programming",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7155)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3518)
                         },
                         new
                         {
-                            Id = new Guid("dc40283f-b295-4947-bd70-089222737c11"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7157),
+                            Id = new Guid("9880df7a-8608-439f-ab09-1e1087383d30"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3521),
                             Name = "c#",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7158)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3521)
                         },
                         new
                         {
-                            Id = new Guid("751725cf-c32b-408b-bbec-8e5bc29bf99c"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7159),
+                            Id = new Guid("3cce05dc-5325-45cb-a77b-067d1fdd13e3"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3523),
                             Name = "sql",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7160)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3523)
                         },
                         new
                         {
-                            Id = new Guid("df7f19b4-11d5-4ed8-89f4-1082a12a635a"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7161),
+                            Id = new Guid("05d45f66-4ec8-413c-888b-d8455cefa64c"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3525),
                             Name = "html",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7162)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3525)
                         },
                         new
                         {
-                            Id = new Guid("38f0acc1-2f37-4efd-a514-7cf7cb5f210c"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7163),
+                            Id = new Guid("d1979a07-c4df-4da1-bb83-b2b68b8243a5"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3527),
                             Name = "css",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7164)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3527)
                         },
                         new
                         {
-                            Id = new Guid("8a2790bb-96b0-4830-9d29-526b3aa73811"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7166),
+                            Id = new Guid("0919cf2b-7e36-4cd5-abf1-b83be59ab0c6"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3530),
                             Name = "javascript",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7166)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3531)
                         },
                         new
                         {
-                            Id = new Guid("ebd23296-b33a-472d-9156-a8a9fb12c68a"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7168),
+                            Id = new Guid("3153943b-548e-4600-ba7f-ed85a209b7f4"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3532),
                             Name = "python",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7169)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3533)
                         },
                         new
                         {
-                            Id = new Guid("0b879c56-205d-488f-9fbf-11f5770e40e5"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7170),
+                            Id = new Guid("e55665a4-fd4f-4741-9745-05f9b8b34b85"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3534),
                             Name = "ci/cd",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7170)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3534)
                         },
                         new
                         {
-                            Id = new Guid("c16731db-b29e-4302-b655-3e7c7b132d12"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7174),
+                            Id = new Guid("48514c42-25ce-4b9f-b2f0-9e624aeda0fd"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3538),
                             Name = "react",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7174)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3539)
                         },
                         new
                         {
-                            Id = new Guid("2210856d-57c9-46f6-b161-55f458e4b3fe"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7176),
+                            Id = new Guid("651f398d-6059-4d20-a200-e42c8a5cacd9"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3541),
                             Name = "frontend",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7176)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3541)
                         },
                         new
                         {
-                            Id = new Guid("9cfae79f-c8af-4f2d-b982-d11f370b87de"),
-                            CreatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7178),
+                            Id = new Guid("6e6d7908-fa7c-40c5-8a50-595c9b52768d"),
+                            CreatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3543),
                             Name = "backend",
-                            UpdatedAt = new DateTime(2023, 7, 17, 11, 23, 3, 44, DateTimeKind.Utc).AddTicks(7178)
+                            UpdatedAt = new DateTime(2023, 7, 18, 22, 18, 38, 805, DateTimeKind.Utc).AddTicks(3543)
                         });
                 });
 
@@ -244,11 +308,13 @@ namespace Blog.Migrations
 
                     b.Property<string>("Password")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("password");
 
                     b.Property<string>("Salt")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("salt");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -256,7 +322,8 @@ namespace Blog.Migrations
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("username");
 
                     b.HasKey("Id");
 
@@ -325,6 +392,44 @@ namespace Blog.Migrations
                     b.Navigation("Post");
                 });
 
+            modelBuilder.Entity("Blog.Entities.LikeComment", b =>
+                {
+                    b.HasOne("Blog.Entities.Comment", "Comment")
+                        .WithMany("Likes")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Blog.Entities.User", "User")
+                        .WithMany("LikedComments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Blog.Entities.LikePost", b =>
+                {
+                    b.HasOne("Blog.Entities.Post", "Post")
+                        .WithMany("Likes")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Blog.Entities.User", "User")
+                        .WithMany("LikedPosts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Blog.Entities.Post", b =>
                 {
                     b.HasOne("Blog.Entities.User", "Owner")
@@ -366,9 +471,16 @@ namespace Blog.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Blog.Entities.Comment", b =>
+                {
+                    b.Navigation("Likes");
+                });
+
             modelBuilder.Entity("Blog.Entities.Post", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Likes");
 
                     b.Navigation("PostTags");
                 });
@@ -381,6 +493,10 @@ namespace Blog.Migrations
             modelBuilder.Entity("Blog.Entities.User", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("LikedComments");
+
+                    b.Navigation("LikedPosts");
 
                     b.Navigation("Posts");
 

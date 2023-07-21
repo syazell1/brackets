@@ -2,6 +2,7 @@ import QueryProvider from '@/providers/QueryProvider'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Toaster } from 'react-hot-toast'
+import AuthProvider from '@/providers/AuthProvider'
 // import { Inter } from 'next/font/google'
 
 // const inter = Inter({ subsets: ['latin'] })
@@ -21,7 +22,9 @@ export default function RootLayout({
       <body >
         <Toaster />
         <QueryProvider>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

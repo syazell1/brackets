@@ -8,10 +8,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { createPostSchema } from "../schemas/postsSchema";
 import { CreatePostInput } from "../types/Posts";
 import { useCreatePost } from "../hooks/useCreatePost";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import MDEditor from "@uiw/react-md-editor";
 
 const CreatePostForm = () => {
     const router = useRouter();
@@ -19,9 +19,13 @@ const CreatePostForm = () => {
     const { register, handleSubmit, formState: { errors } } = useForm<CreatePostInput>({
         resolver: zodResolver(createPostSchema)
     });
+    const [content, setContent] = useState("")
 
     const submitPostHandler = (data: CreatePostInput) => {
-        mutate(data);
+        mutate({
+            title: data.title,
+            content
+        });
     }
 
     return (
@@ -34,17 +38,16 @@ const CreatePostForm = () => {
                         {errors.title && (<ErrorMessage message={errors.title.message} />)}
                     </div>
                     <div>
-                        <div className="grid w-full gap-1.5">
-                            <Label htmlFor="content">Your Content</Label>
-                            <Textarea {...register("content")} placeholder="Type your content here." id="content" />
-                            {errors.content && (<ErrorMessage message={errors.content.message} />)}
+                        <div data-color-mode="light">
+                            <h3>Light</h3>
+                            <MDEditor height={200} value={content} onChange={(v) => {setContent(v!)}} />
                         </div>
                     </div>
                     <div className="mt-[35px] flex justify-between">
                         <Button type="submit">
                             {isLoading ? "Loading..." : "Submit Content"}
                         </Button>
-                         <Button type="button" onClick={() => {router.push('/')}}>
+                        <Button type="button" onClick={() => { router.push('/') }}>
                             Cancel
                         </Button>
                     </div>

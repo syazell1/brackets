@@ -16,7 +16,10 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
     {
         IQueryable<Post> query = _context.Posts
             .AsNoTracking()
-            .Include(x => x.Owner);
+            .Include(x => x.Owner)
+            .Include(x => x.Likes)
+            .Include(x => x.Comments);
+            
 
         return await query
             .Where(x => x.Id.ToString() == Id)
@@ -24,6 +27,8 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
                 x.Id,
                 x.Title,
                 x.Content,
+                x.Likes.Count,
+                x.Comments.Count,
                 new UserDto(x.OwnerId, x.Owner!.Username),
                 x.CreatedAt
             ))
@@ -38,7 +43,9 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
     {
         IQueryable<Post> query = _context.Posts
             .AsNoTracking()
-            .Include(x => x.Owner);
+            .Include(x => x.Owner)
+            .Include(x => x.Likes)
+            .Include(x => x.Comments);
 
         if(!string.IsNullOrEmpty(search))
            query = query.Where(x => x.Title.ToLower().Contains(search.ToLower())); 
@@ -56,6 +63,8 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             x.Id,
             x.Title,
             x.Content,
+            x.Likes.Count,
+            x.Comments.Count,
             new UserDto(x.OwnerId, x.Owner!.Username),
             x.CreatedAt
         ));
@@ -66,6 +75,8 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
         IQueryable<Post> query = _context.Posts
             .AsNoTracking()
             .Include(x => x.Owner)
+            .Include(x => x.Likes)
+            .Include(x => x.Comments)
             .Where(x => x.OwnerId.ToString() == ownerId);
 
         if(!string.IsNullOrEmpty(search))
@@ -84,6 +95,8 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             x.Id,
             x.Title,
             x.Content,
+            x.Likes.Count,
+            x.Comments.Count,
             new UserDto(x.OwnerId, x.Owner!.Username),
             x.CreatedAt
         ));
@@ -94,6 +107,8 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
         IQueryable<Post> query = _context.Posts
             .AsNoTracking()
             .Include(x => x.Owner)
+            .Include(x => x.Likes)
+            .Include(x => x.Comments)
             .Where(x => x.Owner!.Username.ToLower() == ownerName.ToLower());
 
         if(!string.IsNullOrEmpty(search))
@@ -112,6 +127,8 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             x.Id,
             x.Title,
             x.Content,
+            x.Likes.Count,
+            x.Comments.Count,
             new UserDto(x.OwnerId, x.Owner!.Username),
             x.CreatedAt
         ));

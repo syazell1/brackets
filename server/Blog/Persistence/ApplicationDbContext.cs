@@ -14,6 +14,8 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<PostTag> PostTags => Set<PostTag>();
+    public DbSet<LikePost> LikePosts => Set<LikePost>();
+    public DbSet<LikeComment> LikeComments => Set<LikeComment>();
     private readonly IConfiguration _config;
     public ApplicationDbContext(IConfiguration config)
     {

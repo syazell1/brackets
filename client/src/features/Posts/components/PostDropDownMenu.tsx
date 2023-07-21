@@ -1,8 +1,15 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
 import toast from "react-hot-toast";
+import { useDeletePost } from "../hooks/useDeletePost";
+import { useContext } from "react";
+import { authProviderContext } from "@/providers/AuthProvider";
+import Link from "next/link";
 
-const PostDropDownMenu = ({id} : {id?: string}) => {
+const PostDropDownMenu = ({id, ownerName} : {id: string, ownerName: string}) => {
+    const {data} = useContext(authProviderContext)
+    const {mutate, isLoading} = useDeletePost();
+
     const copyLinkHandler = () => {
         const url = window.location.href
         navigator.clipboard.writeText(`${url}posts/${id}`);
@@ -21,8 +28,14 @@ const PostDropDownMenu = ({id} : {id?: string}) => {
                 <DropdownMenuLabel>Post Menu</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer" onClick={copyLinkHandler}>Copy Post Link</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">Update Post</DropdownMenuItem>
-                {/* <DropdownMenuItem className="cursor-pointer" onClick={deletePostHandler} >Delete Post</DropdownMenuItem> */}
+                {(data.username && data.username === ownerName) && (
+                    <>
+                        <DropdownMenuItem className="cursor-pointer">
+                            <Link href={`/posts/${id}/update`}>Update Post</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer" onClick={() => {mutate(id)}} >Delete Post</DropdownMenuItem>
+                    </>
+                )} 
             </DropdownMenuContent>
         </DropdownMenu>
     );
