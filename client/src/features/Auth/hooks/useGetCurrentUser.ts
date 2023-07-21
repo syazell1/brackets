@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { getCurrentUser } from "../services/authApiService"
 
-export const useGetCurrentUser = () => {
-    return useQuery(["current-user"], () => getCurrentUser(),
+export const useGetCurrentUser  = () => {
+    return useQuery(["current-user"], async () => await getCurrentUser(),
     {
-        retry: 1,
-        retryDelay: 500,
         refetchOnWindowFocus: false
     })
 }

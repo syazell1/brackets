@@ -5,8 +5,6 @@ import client from "@/lib/axios";
 import { useRouter } from "next/navigation";
 
 export const useLogout = () => {
-    // const router = useRouter();
-
     return useMutation(() => logoutUser(),
     {
         onSuccess: () => {
