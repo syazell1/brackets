@@ -5,13 +5,19 @@ import { useGetUserDetails } from "../hooks/useGetUserDetails";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { useContext } from "react";
+import { authProviderContext } from "@/providers/AuthProvider";
 
 type UserProfileDetailsType = {
     username: string
 }
 
 const UserProfileDetails = ({ username }: UserProfileDetailsType) => {
+    const { data: userData } = useContext(authProviderContext)
     const { data, isLoading } = useGetUserDetails(username)
+    const router = useRouter();
 
     if (!data || isLoading)
         return <p>Loading...</p>
@@ -24,14 +30,21 @@ const UserProfileDetails = ({ username }: UserProfileDetailsType) => {
                         <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
                         <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
-                    <p className="text-lg font-semibold">@{data.username}</p>
+                    <div className="flex items-center gap-4">
+                        <p className="text-lg font-semibold">@{data.username}</p>
+                        {(userData && userData.username === username) && (
+                            <Button variant="outline" onClick={() => {
+                                router.push(`/profile/${username}/update`)
+                            }}>Edit Profile</Button>
+                        )}
+                    </div>
                 </div>
                 {/* Users Info */}
                 <div className="mx-auto w-[250px]">
                     <div>
-                         <Label htmlFor="terms">Bio</Label>
+                        <Label htmlFor="terms">Bio</Label>
                         <p className="italic">{data.bio}</p>
-                    </div> 
+                    </div>
                 </div>
             </div>
         </Card>

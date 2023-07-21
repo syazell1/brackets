@@ -25,7 +25,7 @@ const UserMenu = ({ data: { username } }: UserMenuType) => {
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="cursor-pointer">
-                        <Link href={`profile/${username}`}>Profile</Link> 
+                        <Link href={`/profile/${username}`}>Profile</Link> 
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="cursor-pointer" onClick={() => {mutate()}}>
