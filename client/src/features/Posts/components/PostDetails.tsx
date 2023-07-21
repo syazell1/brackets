@@ -3,21 +3,22 @@
 import Card from "@/components/layout/Card"
 import { useGetPostById } from "../hooks/useGetPostById";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical } from "lucide-react";
 import UserHoverCard from "@/features/Users/components/UserHoverCard";
 import PostDropDownMenu from "./PostDropDownMenu";
+import LikePost from "./LikePost";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 
 type PostDetailsType = {
     id: string
 }
 
 const PostDetails = ({ id }: PostDetailsType) => {
-    const { data, isLoading } = useGetPostById(id);
-    
+    const { data } = useGetPostById(id);
     if (!data)
-    return <p>Loading...</p>
-    
+        return <p>Loading...</p>
+
     const date = new Date(data.createdAt).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" })
 
     return (
@@ -37,18 +38,26 @@ const PostDetails = ({ id }: PostDetailsType) => {
                         </div>
                     </div>
                     <div>
-                        <PostDropDownMenu />
+                        <PostDropDownMenu id={id} ownerName={data.owner.username} />
                     </div>
                 </header>
                 <main className="mx-[20px]">
-                    <div className="flex flex-col gap-4">
+                    <div >
                         <h2 className="text-2xl font-semibold">{data.title}</h2>
-                        <p>{data.content}</p>
-                    </div> 
+                        <div className="markdown-body" style={{marginTop: "30px"}}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {data.content}
+                            </ReactMarkdown>
+                        </div>
+                    </div>
                 </main>
 
-                <footer>
-
+                <footer className="mx-[20px] mt-[30px]">
+                    <div className="flex gap-4">
+                        <div className="flex gap-2 items-center">
+                            <LikePost postId={id} likesCount={data.likeCount} />
+                        </div>
+                    </div>
                 </footer>
             </div>
         </Card>
