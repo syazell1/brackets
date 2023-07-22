@@ -4,7 +4,7 @@ import { AddCommentInput, CommentDetails } from "../types/Comments"
 import { COMMENTS_URL, POSTS_URL } from "@/constants/server-config"
 
 export const getCommentsByPostId = async (page: number, postId : string) => {
-    const res = await client.get<PagedList<CommentDetails>>(`${POSTS_URL}/${postId}/comments`)
+    const res = await client.get<PagedList<CommentDetails>>(`${POSTS_URL}/${postId}/comments?page=${page}`)
 
     return res.data
 }
