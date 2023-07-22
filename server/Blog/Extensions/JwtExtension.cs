@@ -18,6 +18,7 @@ public static class JwtExtension
         {
             cfg.TokenValidationParameters = new TokenValidationParameters
             {
+                ClockSkew = TimeSpan.Zero,
                 ValidateActor = true,
                 ValidateIssuer = true,
                 ValidateIssuerSigningKey = true,
