@@ -32,7 +32,7 @@ const PostCommentsList = ({postId} : PostCommentsListType) => {
         return <p>Loading...</p>
 
     if(data.pages[0].results.length == 0)
-        return <p>No Posts Available</p>
+        return <p className="italic text-center mt-[20px]">No Comments Available</p>
 
     return (
         <ul className="flex flex-col gap-4">
