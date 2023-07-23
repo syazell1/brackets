@@ -6,7 +6,12 @@ import PostItem from "./PostItem";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
-const PostsList = () => {
+
+type PostsListType = {
+    searchParam?: string 
+}
+
+const PostsList = (props : PostsListType) => {
     const {ref, inView} = useInView();
     const {
         data,
@@ -16,7 +21,7 @@ const PostsList = () => {
         isFetching,
         isFetchingNextPage,
         status
-    } = useGetPosts();
+    } = useGetPosts(props.searchParam);
 
     
     useEffect(() => {

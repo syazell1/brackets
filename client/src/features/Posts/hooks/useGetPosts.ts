@@ -1,9 +1,9 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { getPosts } from "../services/postsApiService"
 
-export const useGetPosts = () => {
-    return useInfiniteQuery(["posts"], ({ pageParam = 1 }) => {
-        return getPosts(pageParam)
+export const useGetPosts = (search?: string) => {
+    return useInfiniteQuery(["posts", {search}], ({ pageParam = 1 }) => {
+        return getPosts(pageParam, search)
     }, {
         getNextPageParam: (lastPage, allPages) => {
             const nextPage =

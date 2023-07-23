@@ -1,8 +1,17 @@
 import Container from "@/components/layout/Container"
 import RegisterForm from "@/features/Auth/components/RegisterForm"
-import AuthGuard from "@/providers/AuthGuard"
+import { getUser } from "@/providers/getCurrentUser";
+import { redirect } from "next/navigation";
 
-const RegisterPage = () => {
+const RegisterPage = async () => {
+
+    const data = await getUser();
+
+    if(data != null)
+        redirect("/")
+
+
+
     return (
         <Container className="pt-[20px]">
             <RegisterForm />
@@ -10,4 +19,4 @@ const RegisterPage = () => {
     )
 }
 
-export default AuthGuard(RegisterPage, false) 
+export default RegisterPage 

@@ -19,21 +19,23 @@ const PostCommentsList = ({postId} : PostCommentsListType) => {
         isFetching,
         isFetchingNextPage,
         status
-    } = useGetCommentsByPostId(postId)
+    } = useGetCommentsByPostId(postId);
+
     
     useEffect(() => {
-        if(inView && hasNextPage)
+        if (inView && hasNextPage) {
             fetchNextPage();
-    }, [inView, fetchNextPage, hasNextPage])
+        }
+    }, [inView, fetchNextPage, hasNextPage]);
 
     if(!data)
         return <p>Loading...</p>
 
     if(data.pages[0].results.length == 0)
-        return <p className="italic mt-[20px]">No Available Comments</p>
+        return <p className="italic text-center mt-[20px]">No Comments Available</p>
 
     return (
-        <ul className="flex flex-col gap-4 mt-[20px]">
+        <ul className="flex flex-col gap-4">
              {data.pages.map((group, ind) =>
                 group.results.map((post, i) => {
                     if (group.results.length === i + 1) {
@@ -43,8 +45,13 @@ const PostCommentsList = ({postId} : PostCommentsListType) => {
                 })
             )}
             {isFetchingNextPage && <h3>Loading...</h3>}
-        </ul>      
-    );
+        </ul> 
+    )
+
 }
 
 export default PostCommentsList;
+
+
+    // if(data.pages[0].results.length == 0)
+    //     return <p className="italic mt-[20px]">No Available Comments</p>

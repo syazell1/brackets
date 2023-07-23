@@ -3,16 +3,13 @@ import { getUser } from "./getCurrentUser";
 import { redirect } from "next/navigation";
 
 
-const AuthGuard = (Component: React.FC<{}>, isProtected : boolean = true) => {
+const AuthGuard = (Component: React.FC<{}>) => {
     return async () => {
 
         const user = await getUser();
 
-        if (user == null && isProtected)
+        if (user == null )
             redirect('/')
-
-        // if(user != null)
-        //     redirect('/')
 
         return (
             <Component />

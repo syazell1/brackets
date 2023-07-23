@@ -32,7 +32,7 @@ public class JwtService : IJwtService
             _config["Authentication:Audience"],
             claims,
             DateTime.Now,
-            isRefreshToken ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(12),
+            isRefreshToken ? DateTime.Now.AddDays(Convert.ToDouble(7)) : DateTime.Now.AddMinutes(Convert.ToDouble(12)),
             signingCredentials
         );
 
@@ -54,7 +54,8 @@ public class JwtService : IJwtService
                 ValidAudience = _config["Authentication:Audience"],
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(_config["Authentication:SecretForKey"]!)
-                )
+                ),
+                ClockSkew = TimeSpan.Zero
             },
             out SecurityToken validatedToken
         );
