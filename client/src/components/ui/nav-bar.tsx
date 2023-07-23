@@ -3,6 +3,7 @@
 import UserNavMenu from "@/features/Users/components/UserNavMenu"
 import { Input } from "./input"
 import Link from "next/link"
+import SearchBar from "@/features/Search/components/SearchBar"
 
 const NavBar = () => {
     return (
@@ -10,7 +11,7 @@ const NavBar = () => {
             <nav className="flex justify-between items-center gap-4">
                 <Link href="/" className="text-lg font-semibold hover:underline">brackets</Link>
                 <div className="basis-[350px]">
-                    <Input placeholder="Search" />
+                    <SearchBar /> 
                 </div>
                 <UserNavMenu />
             </nav>

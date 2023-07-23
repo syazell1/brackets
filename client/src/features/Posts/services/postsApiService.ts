@@ -4,8 +4,14 @@ import { PagedList } from "@/types/PagedList";
 import { POSTS_URL, USERS_URL } from "@/constants/server-config";
 import client from "@/lib/axios";
 
-export const getPosts = async (page: number) => {
-    const res = await client.get<PagedList<PostDetails>>(`${POSTS_URL}?sortOrder=desc&page=${page}`);
+export const getPosts = async (page: number, search?: string) => {
+
+    let url = `${POSTS_URL}?sortOrder=desc&page=${page}`
+
+    if(search != undefined)
+        url += `&search=${search}`
+
+    const res = await client.get<PagedList<PostDetails>>(url);
 
     return res.data;
 }
