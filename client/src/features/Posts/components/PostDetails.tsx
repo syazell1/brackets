@@ -41,7 +41,7 @@ const PostDetails = ({ data }: PostDetailsType) => {
                 <main className="mx-[20px]">
                     <div >
                         <h2 className="text-2xl font-semibold">{data.title}</h2>
-                        <div  style={{display: "contents"}}>
+                        <div  className="markdown-body" style={{marginTop: "30px"}}>
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {data.content}
                             </ReactMarkdown>
