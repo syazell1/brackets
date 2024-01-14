@@ -1,0 +1,9 @@
+
+[workspace]
+resolver = '2'
+members = [
+	'./server',
+]
+
+[profile.release]
+lto = true
