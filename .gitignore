@@ -5,7 +5,7 @@
 .env.prod
 
 # CONFIGS
-configuratiom.yml
+configuration.yml
 
 # compiled output
 dist
