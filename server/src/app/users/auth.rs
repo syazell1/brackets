@@ -1,20 +1,23 @@
 use anyhow::Context;
 use argon2::Argon2;
-use password_hash::{PasswordHasher, SaltString, PasswordHash, PasswordVerifier};
+use password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use secrecy::ExposeSecret;
-use sqlx::{Transaction, Postgres, Executor, PgPool};
+use sqlx::{Executor, PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
-use crate::{errors::AppError, models::{UsersRegistrationInput, Credentials}};
+use crate::{
+    errors::AppError,
+    models::{Credentials, UsersRegistrationInput},
+};
 
 #[tracing::instrument(
     name = "Adding User Credentials from the Database.",
     skip(user_id, credentials, pool)
 )]
 pub async fn create_user_from_credentials(
-    user_id : &Uuid,
-    credentials : &UsersRegistrationInput,
-    pool : &mut Transaction<'_, Postgres>
+    user_id: &Uuid,
+    credentials: &UsersRegistrationInput,
+    pool: &mut Transaction<'_, Postgres>,
 ) -> Result<(), AppError> {
     let params = argon2::Params::new(15000, 2, 1, None)
         .context("Failed to set Argon2 Params.")
@@ -22,12 +25,10 @@ pub async fn create_user_from_credentials(
     let hasher = Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
     let salt = SaltString::generate(rand::thread_rng());
 
-    let hashed_password = hasher.hash_password(
-        credentials.password.expose_secret().as_bytes(), 
-        &salt
-    )
-    .context("Failed to hash password.")
-    .map_err(AppError::UnexpectedError)?;
+    let hashed_password = hasher
+        .hash_password(credentials.password.expose_secret().as_bytes(), &salt)
+        .context("Failed to hash password.")
+        .map_err(AppError::UnexpectedError)?;
 
     let query = sqlx::query!(
         r#"
@@ -40,8 +41,7 @@ pub async fn create_user_from_credentials(
         hashed_password.to_string()
     );
 
-    pool
-        .execute(query)
+    pool.execute(query)
         .await
         .context("Failed to Insert user credentials from the database.")
         .map_err(AppError::UnexpectedError)?;
@@ -54,8 +54,8 @@ pub async fn create_user_from_credentials(
     skip(credentials, pool)
 )]
 pub async fn validate_user_credentials(
-    credentials : &Credentials,
-    pool : &PgPool
+    credentials: &Credentials,
+    pool: &PgPool,
 ) -> Result<Uuid, AppError> {
     let row = sqlx::query!(
         r#"SELECT * FROM users WHERE username = $1"#,
@@ -66,9 +66,13 @@ pub async fn validate_user_credentials(
     .context("Failed to fetch user from the database.")
     .map_err(AppError::UnexpectedError)?;
 
-    let (id, password)= match row {
-        Some(data) => (data.id, data.password), 
-        None => return Err(AppError::UnauthorizedError(anyhow::anyhow!("Invalid Username."))) 
+    let (id, password) = match row {
+        Some(data) => (data.id, data.password),
+        None => {
+            return Err(AppError::UnauthorizedError(anyhow::anyhow!(
+                "Invalid Username."
+            )))
+        }
     };
 
     let phc_password = PasswordHash::new(&password)
@@ -76,7 +80,10 @@ pub async fn validate_user_credentials(
         .map_err(AppError::UnauthorizedError)?;
 
     Argon2::default()
-        .verify_password(credentials.password.expose_secret().as_bytes(), &phc_password)
+        .verify_password(
+            credentials.password.expose_secret().as_bytes(),
+            &phc_password,
+        )
         .context("Invalid Password.")
         .map_err(AppError::UnauthorizedError)?;
 
@@ -88,13 +95,10 @@ pub async fn validate_user_credentials(
     skip(user_id, pool)
 )]
 pub async fn validate_user_by_id(
-    user_id : &Uuid,
-    pool : &mut Transaction<'_, Postgres>
+    user_id: &Uuid,
+    pool: &mut Transaction<'_, Postgres>,
 ) -> Result<(), AppError> {
-    let query = sqlx::query!(
-        r#"SELECT COUNT(id) FROM users WHERE id = $1"#,
-       user_id 
-    );
+    let query = sqlx::query!(r#"SELECT COUNT(id) FROM users WHERE id = $1"#, user_id);
 
     let row = pool
         .fetch_optional(query)
@@ -103,8 +107,40 @@ pub async fn validate_user_by_id(
         .map_err(AppError::UnexpectedError)?;
 
     match row {
-        Some(_) => (), 
-        None => return Err(AppError::UnauthorizedError(anyhow::anyhow!("Invalid Username."))) 
+        Some(_) => (),
+        None => {
+            return Err(AppError::UnauthorizedError(anyhow::anyhow!(
+                "Invalid Username."
+            )))
+        }
+    };
+
+    Ok(())
+}
+
+#[tracing::instrument(
+    name = "Validating User from the Database" 
+    skip(username, pool)
+)]
+pub async fn verify_user_by_username(username: &str, pool: &PgPool) -> Result<(), AppError> {
+    let result = sqlx::query!(
+        r#"
+        SELECT COUNT(id) FROM users WHERE username = $1
+        "#,
+        username
+    )
+    .fetch_optional(pool)
+    .await
+    .context("Failed to fetch user from the database.")
+    .map_err(AppError::UnexpectedError)?;
+
+    match result {
+        Some(_) => (),
+        None => {
+            return Err(AppError::NotFoundError(anyhow::anyhow!(
+                "Username was not found."
+            )))
+        }
     };
 
     Ok(())

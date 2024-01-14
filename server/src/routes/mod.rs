@@ -1,5 +1,8 @@
-mod health_check;
 mod auth;
+mod health_check;
+mod posts;
 
-pub use health_check::*;
 pub use auth::*;
+pub use health_check::*;
+pub use posts::*;
+
