@@ -6,6 +6,7 @@ use uuid::Uuid;
 use crate::{
     errors::AppError,
     models::{PageList, PostOwner, PostsData, PostsInput},
+    utils::uuid_parser,
 };
 
 #[tracing::instrument(name = "Adding Users Posts from the database", skip())]
@@ -93,10 +94,14 @@ pub async fn manage_users_posts(
 
 #[tracing::instrument(name = "Verifying Users Posts from the database", skip())]
 pub async fn verify_users_posts_by_id(
-    post_id: &Uuid,
+    post_id: &str,
     user_id: &Uuid,
     pool: &mut Transaction<'_, Postgres>,
 ) -> Result<(), AppError> {
+    let post_id = Uuid::try_parse(post_id)
+        .context("Invalid Post Id.")
+        .map_err(AppError::BadRequestError)?;
+
     let query = sqlx::query!(
         r#"
             SELECT id FROM posts WHERE id = $1 AND owner_id = $2
@@ -120,6 +125,36 @@ pub async fn verify_users_posts_by_id(
         }
     }
     Ok(())
+}
+
+#[tracing::instrument(name = "Verifying Posts from the database", skip(post_id, pool))]
+pub async fn verify_posts_by_id(
+    post_id: &str,
+    pool: &mut Transaction<'_, Postgres>,
+) -> Result<(), AppError> {
+    let post_id = uuid_parser(post_id)?;
+
+    let query = sqlx::query!(
+        r#"
+            SELECT id FROM posts WHERE id = $1
+        "#,
+        post_id
+    );
+
+    let result = pool
+        .fetch_optional(query)
+        .await
+        .context("Failed to fetch post from the database.")
+        .map_err(AppError::UnexpectedError)?;
+
+    match result {
+        Some(_) => Ok(()),
+        None => {
+            return Err(AppError::NotFoundError(anyhow::anyhow!(
+                "Post was not found."
+            )))
+        }
+    }
 }
 
 #[tracing::instrument(

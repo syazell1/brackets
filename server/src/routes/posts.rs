@@ -14,12 +14,15 @@ use crate::{
     utils::{filter_app_err, AuthToken},
 };
 
+use super::get_posts_comments;
+
 pub fn posts_scope() -> Scope {
     web::scope("/posts")
         .service(create_posts)
         .service(update_posts)
         .service(manage_posts)
         .service(fetch_posts_by_username)
+        .service(get_posts_comments)
 }
 
 #[post("")]
@@ -58,7 +61,7 @@ async fn update_posts(
         .context("Failed to initialize SQL Transaction.")
         .map_err(AppAPIError::UnexpectedError)?;
 
-    verify_users_posts_by_id(&id, &auth_token.id, &mut transaction)
+    verify_users_posts_by_id(&post_id, &auth_token.id, &mut transaction)
         .await
         .map_err(filter_app_err)?;
 
@@ -84,7 +87,7 @@ async fn manage_posts(
 ) -> Result<HttpResponse, AppAPIError> {
     let id = Uuid::try_parse(&post_status.id)
         .context("Invalid Id.")
-        .map_err(AppAPIError::NotFoundError)?;
+        .map_err(AppAPIError::BadRequestError)?;
 
     let is_delete = if post_status.command.to_lowercase().eq("delete") {
         true
@@ -102,7 +105,7 @@ async fn manage_posts(
         .context("Failed to initialize SQL Transaction.")
         .map_err(AppAPIError::UnexpectedError)?;
 
-    verify_users_posts_by_id(&id, &auth_token.id, &mut transaction)
+    verify_users_posts_by_id(&post_status.id, &auth_token.id, &mut transaction)
         .await
         .map_err(filter_app_err)?;
 
