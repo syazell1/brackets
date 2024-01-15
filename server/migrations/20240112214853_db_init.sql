@@ -52,7 +52,9 @@ CREATE TABLE comments (
     id uuid NOT NULL,
     PRIMARY KEY (id),
     content TEXT NOT NULL,
+    post_id uuid NOT NULL,
     owner_id uuid NOT NULL,
+    FOREIGN KEY (post_id) REFERENCES posts(id),
     FOREIGN KEY (owner_id) REFERENCES users(id),
     created_at timestamptz NOT NULL,
     updated_at timestamptz
