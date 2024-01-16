@@ -1,11 +1,10 @@
-import TestComponent from "client/components/TestComponent";
+import PageContainer from "client/components/layouts/PageContainer";
 
 const IndexPage = () => {
   return (
-    <>
-      <TestComponent />
-      <p>Hello world</p>
-    </>
+    <PageContainer>
+      <p>Hello</p>
+    </PageContainer>
   )
 }
 

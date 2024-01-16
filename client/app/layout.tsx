@@ -1,4 +1,7 @@
+import QueryProvider from 'client/providers/QueryProvider';
 import './global.css';
+import { Toaster } from 'react-hot-toast';
+import AuthContext from 'client/providers/AuthContext';
 
 export const metadata = {
   title: 'Welcome to client',
@@ -12,7 +15,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Toaster />
+        <QueryProvider>
+          <AuthContext>
+            {children}
+          </AuthContext>
+        </QueryProvider>
+      </body>
     </html>
   );
 }
