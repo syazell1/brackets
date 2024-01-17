@@ -6,8 +6,8 @@ use validator::Validate;
 
 use crate::{
     app::{
-        create_users_posts, get_users_posts_by_username, manage_users_posts, update_users_posts,
-        verify_user_by_username, verify_users_posts_by_id,
+        create_users_posts, get_all_posts, get_users_posts_by_username, manage_users_posts,
+        update_users_posts, verify_user_by_username, verify_users_posts_by_id,
     },
     errors::AppAPIError,
     models::{PageFilters, PostStatusPath, PostsInput},
@@ -22,6 +22,7 @@ pub fn posts_scope() -> Scope {
         .service(update_posts)
         .service(manage_posts)
         .service(fetch_posts_by_username)
+        .service(fetch_all_posts)
         .service(get_posts_comments)
 }
 
@@ -135,6 +136,23 @@ async fn fetch_posts_by_username(
 
     let result = get_users_posts_by_username(
         &username,
+        page_filters.page.unwrap_or(1),
+        page_filters.page_size.unwrap_or(10),
+        &pool,
+    )
+    .await
+    .map_err(filter_app_err)?;
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
+#[get("")]
+#[tracing::instrument(name = "Fetching ALl Posts", skip(page_filters, pool))]
+async fn fetch_all_posts(
+    page_filters: web::Query<PageFilters>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, AppAPIError> {
+    let result = get_all_posts(
         page_filters.page.unwrap_or(1),
         page_filters.page_size.unwrap_or(10),
         &pool,

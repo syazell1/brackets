@@ -14,6 +14,8 @@ pub struct PostsData {
     pub title: String,
     pub content: String,
     pub created_at: DateTime<Utc>,
+    pub likes_count: i64,
+    pub comments_count: i64,
     pub owner: PostOwner,
 }
 
