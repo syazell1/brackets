@@ -158,7 +158,7 @@ pub async fn verify_posts_by_id(
 }
 
 #[tracing::instrument(
-    name = "Verifying Users Posts from the database",
+    name = "Fetching Users Posts from the database",
     skip(username, current_page, page_size, pool)
 )]
 pub async fn get_users_posts_by_username(
@@ -173,7 +173,9 @@ pub async fn get_users_posts_by_username(
         PostsData,
         r#"
             SELECT p.id, p.title, p.content, p.created_at,
-            (u.id, u.username) "owner!: PostOwner"  
+            (u.id, u.username) "owner!: PostOwner",
+            (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) "likes_count!: i64",
+            (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64"
             FROM posts p
             INNER JOIN users u ON u.id = p.owner_id
             WHERE u.username = $1
@@ -200,6 +202,58 @@ pub async fn get_users_posts_by_username(
     .fetch_one(pool)
     .await
     .context("Failed to fetch users posts count from the database.")
+    .map_err(AppError::UnexpectedError)?;
+
+    let page_result = PageList::new(
+        result,
+        current_page,
+        page_size,
+        total_items_count.unwrap_or(0) as u32,
+    );
+
+    Ok(page_result)
+}
+
+#[tracing::instrument(
+    name = "Fetching All Posts from the database",
+    skip(current_page, page_size, pool)
+)]
+pub async fn get_all_posts(
+    current_page: u32,
+    page_size: u32,
+    pool: &PgPool,
+) -> Result<PageList<Vec<PostsData>>, AppError> {
+    let page = page_size * (current_page - 1);
+
+    let result = sqlx::query_as!(
+        PostsData,
+        r#"
+            SELECT p.id, p.title, p.content, p.created_at,
+            (u.id, u.username) "owner!: PostOwner",
+            (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) "likes_count!: i64",
+            (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64" 
+            FROM posts p
+            INNER JOIN users u ON u.id = p.owner_id
+            OFFSET $1
+            LIMIT $2
+        "#,
+        page as i32,
+        page_size as i32
+    )
+    .fetch_all(pool)
+    .await
+    .context("Failed to fetch posts from the database.")
+    .map_err(AppError::UnexpectedError)?;
+
+    let total_items_count = sqlx::query_scalar!(
+        r#"
+        SELECT COUNT(p.id) FROM posts p
+        INNER JOIN users u on u.id = p.owner_id
+        "#
+    )
+    .fetch_one(pool)
+    .await
+    .context("Failed to fetch posts count from the database.")
     .map_err(AppError::UnexpectedError)?;
 
     let page_result = PageList::new(
