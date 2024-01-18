@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { loginInputSchema } from "../schemas/auth.schema"
 import { LoginInput } from "../types/auth.types"
 import ErrorMessage from "client/components/ui/ErrorMessage"
+import Link from "next/link"
 
 const LoginForm = () => {
   const { mutate, isPending } = useLogin();
@@ -43,7 +44,7 @@ const LoginForm = () => {
         </Button>
       </div>
       <div className={styles["sign-up"]}>
-        <p>Don't have an account? <a href="#">Sign Up Now</a>
+        <p>Don't have an account? <Link href="/register">Sign up Now</Link>
         </p>
       </div>
     </form>
