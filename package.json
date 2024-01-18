@@ -44,12 +44,14 @@
     "@hookform/resolvers": "^3.3.4",
     "@nrwl/nx-cloud": "^16.5.2",
     "@tanstack/react-query": "^5.17.10",
+    "@uiw/react-md-editor": "^4.0.3",
     "axios": "^1.6.5",
     "next": "13.4.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.49.3",
     "react-hot-toast": "^2.4.1",
+    "react-intersection-observer": "^9.5.3",
     "tslib": "^2.3.0",
     "zod": "^3.22.4"
   }
