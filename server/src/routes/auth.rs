@@ -9,13 +9,13 @@ use validator::Validate;
 
 use crate::{
     app::{
-        create_user_from_credentials, create_users_info, validate_user_by_id,
+        create_user_from_credentials, create_users_info, get_user_by_id, validate_user_by_id,
         validate_user_credentials,
     },
     configuration::JwtSettings,
     errors::AppAPIError,
     models::{Credentials, UsersRegistrationInput},
-    utils::{decode_jwt, filter_app_err, generate_jwt},
+    utils::{decode_jwt, filter_app_err, generate_jwt, AuthToken},
 };
 
 #[derive(serde::Serialize)]
@@ -29,6 +29,7 @@ pub fn auth_scope() -> Scope {
         .service(login_user)
         .service(refresh_user_token)
         .service(logout_user)
+        .service(get_current_user)
 }
 
 #[post("/register")]
@@ -193,3 +194,18 @@ async fn logout_user(req: HttpRequest) -> Result<HttpResponse, AppAPIError> {
     Ok(HttpResponse::Ok().cookie(cookie).finish())
 }
 
+#[get("/current_user")]
+#[tracing::instrument(
+    name = "Getting current authenticated user info",
+    skip(auth_token, pool)
+)]
+async fn get_current_user(
+    auth_token: AuthToken,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, AppAPIError> {
+    let user = get_user_by_id(&auth_token.id, &pool)
+        .await
+        .map_err(filter_app_err)?;
+
+    Ok(HttpResponse::Ok().json(user))
+}

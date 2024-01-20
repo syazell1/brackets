@@ -10,12 +10,23 @@ import { loginInputSchema } from "../schemas/auth.schema"
 import { LoginInput } from "../types/auth.types"
 import ErrorMessage from "client/components/ui/ErrorMessage"
 import Link from "next/link"
+import { useContext, useEffect } from "react"
+import { authContextProvider } from "client/providers/AuthContext"
+import { useRouter } from "next/navigation"
 
 const LoginForm = () => {
   const { mutate, isPending } = useLogin();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(loginInputSchema)
   });
+  const { isLoggedIn } = useContext(authContextProvider)
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.push('/')
+    }
+  }, [isLoggedIn])
 
   const submitLoginHandler = (data: LoginInput) => {
     mutate(data)

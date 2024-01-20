@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     errors::AppError,
-    models::{Credentials, UsersRegistrationInput},
+    models::{Credentials, UserInfo, UsersRegistrationInput},
 };
 
 #[tracing::instrument(
@@ -144,4 +144,28 @@ pub async fn verify_user_by_username(username: &str, pool: &PgPool) -> Result<()
     };
 
     Ok(())
+}
+
+#[tracing::instrument(name = "fetching user from the database", skip(user_id, pool))]
+pub async fn get_user_by_id(user_id: &Uuid, pool: &PgPool) -> Result<UserInfo, AppError> {
+    let result = sqlx::query_as!(
+        UserInfo,
+        r#"
+            SELECT id, username FROM users WHERE id = $1
+        "#,
+        user_id
+    )
+    .fetch_optional(pool)
+    .await
+    .context("Failed to fetch user from the database.")
+    .map_err(AppError::UnexpectedError)?;
+
+    match result {
+        Some(data) => Ok(data),
+        None => {
+            return Err(AppError::UnauthorizedError(anyhow::anyhow!(
+                "User was not found."
+            )))
+        }
+    }
 }
