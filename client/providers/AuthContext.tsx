@@ -1,25 +1,72 @@
 'use client'
+
+import { AxiosError } from 'axios'
+import { AUTH_URL } from 'client/constants/server-config'
 import { AuthDetails } from 'client/features/auth/types/auth.types'
-import { ReactNode, createContext, useState } from 'react'
+import { UsersInfo } from 'client/features/users/types/users.types'
+import client from 'client/libs/axios'
+import { ReactNode, createContext, useEffect, useState } from 'react'
 
 type AuthProviderType = {
-  authDetails: AuthDetails,
-  setDetails: (data: AuthDetails) => void
+  usersInfo: UsersInfo,
+  setDetails: (data: UsersInfo) => void,
+  isLoggedIn: boolean,
+  setIsLoggedInHandler: (v: boolean) => void,
+  isLoading: boolean,
+  setIsLoadingHandler: (v: boolean) => void
 }
 
 export const authContextProvider = createContext<AuthProviderType>({} as AuthProviderType)
 
 const AuthContext = ({ children }: { children: ReactNode }) => {
-  const [authDetails, setAuthDetails] = useState<AuthDetails>({} as AuthDetails);
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [usersInfo, setUsersInfo] = useState<UsersInfo>({} as UsersInfo);
+
+  // get current authenticated user 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await client.get<UsersInfo>(`${AUTH_URL}/current_user`)
+
+        if (res.status === 200) {
+          setUsersInfo(res.data)
+          setIsLoggedIn(true)
+        }
+        setIsLoading(false)
+      }
+      catch (ex) {
+        if (ex instanceof AxiosError) {
+          setUsersInfo({} as UsersInfo)
+          setIsLoggedIn(false)
+        }
+        setIsLoading(false)
+      }
+    }
+
+    fetchData();
+  }, [])
 
 
-  const setDetails = (data: AuthDetails) => {
-    setAuthDetails(data)
+  const setDetails = (data: UsersInfo) => {
+    setUsersInfo(data)
+  }
+
+  const setIsLoggedInHandler = (v: boolean) => {
+    setIsLoggedIn(v)
+  }
+
+  const setIsLoadingHandler = (v: boolean) => {
+    setIsLoading(v)
   }
 
   const val = {
-    authDetails,
-    setDetails
+    usersInfo,
+    setDetails,
+    setIsLoggedInHandler,
+    isLoggedIn,
+    isLoading,
+    setIsLoadingHandler
   }
 
   return (
