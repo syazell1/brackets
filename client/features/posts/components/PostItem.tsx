@@ -3,16 +3,34 @@
 import { forwardRef } from "react";
 import { PostsDetails } from "../types/posts.types";
 import Card from "client/components/layouts/Card";
+import styles from './PostItem.module.css'
+import { Heart, MessageCircleMore } from "lucide-react";
 
 type PostItemType = {
   data: PostsDetails
 }
 
 const PostItem = forwardRef<HTMLElement, PostItemType>(
-  ({ data }, ref) => {
+  ({ data: { id, title, likes_count, comments_count } }, ref) => {
 
     const postItemContent = (
-      <p>{data.title}</p>
+      <div>
+        <div className={styles.contents}>
+          <div className={styles.title}>
+            <h2>{title}</h2>
+          </div>
+          <div className={styles.controls}>
+            <div className={styles.btn}>
+              <Heart />
+              <p>{likes_count}</p>
+            </div>
+            <div className={styles.btn}>
+              <MessageCircleMore />
+              <p>{comments_count}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     )
 
     const postItem = ref ? (
