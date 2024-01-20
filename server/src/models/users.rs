@@ -1,4 +1,5 @@
 use secrecy::Secret;
+use uuid::Uuid;
 
 #[derive(serde::Deserialize, validator::Validate)]
 pub struct UsersRegistrationInput {
@@ -16,3 +17,8 @@ pub struct Credentials {
     pub password: Secret<String>,
 }
 
+#[derive(serde::Serialize)]
+pub struct UserInfo {
+    pub id: Uuid,
+    pub username: String,
+}
