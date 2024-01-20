@@ -1,13 +1,16 @@
 use std::future::{ready, Ready};
 
-use actix_web::{http::header::Header, FromRequest, web};
+use actix_web::{http::header::Header, web, FromRequest};
 use actix_web_httpauth::headers::authorization;
 use anyhow::Context;
 use chrono::{Duration, Utc};
-use jsonwebtoken::{encode, EncodingKey, Header as JwtHeader, TokenData, decode, DecodingKey};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header as JwtHeader, TokenData};
 use uuid::Uuid;
 
-use crate::{configuration::JwtSettings, errors::{AppAPIError, AppError}};
+use crate::{
+    configuration::JwtSettings,
+    errors::{AppAPIError, AppError},
+};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct Claims {
@@ -40,10 +43,7 @@ fn generate_token(
     )
 }
 
-pub fn decode_jwt(
-    token : &str,
-    jwt_settings: &JwtSettings
-) -> Result<TokenData<Claims>, AppError> {
+pub fn decode_jwt(token: &str, jwt_settings: &JwtSettings) -> Result<TokenData<Claims>, AppError> {
     let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256);
     validation.set_issuer(&[jwt_settings.issuer.to_string()]);
     validation.set_audience(&[jwt_settings.audience.to_string()]);
@@ -51,7 +51,7 @@ pub fn decode_jwt(
     let token_data = decode::<Claims>(
         token,
         &DecodingKey::from_secret(jwt_settings.secret_key.as_bytes()),
-        &validation
+        &validation,
     )
     .context("Failed to decode jwt token")
     .map_err(AppError::UnauthorizedError)?;
@@ -87,7 +87,7 @@ impl FromRequest for AuthToken {
         let bearer = match authorization::Authorization::<authorization::Bearer>::parse(&req) {
             Ok(data) => data.into_scheme(),
             Err(_) => {
-                return ready(Err(AppAPIError::UnexpectedError(anyhow::anyhow!(
+                return ready(Err(AppAPIError::UnauthorizedError(anyhow::anyhow!(
                     "No Token Found"
                 ))))
             }
@@ -99,7 +99,7 @@ impl FromRequest for AuthToken {
                 return ready(Err(AppAPIError::UnexpectedError(anyhow::anyhow!(
                     "Unable to fetch jwt settings."
                 ))))
-            } 
+            }
         };
 
         match decode_jwt(bearer.token(), jwt_settings) {
@@ -107,14 +107,17 @@ impl FromRequest for AuthToken {
                 let id = match Uuid::try_parse(&data.claims.id) {
                     Ok(data) => data,
                     Err(_) => {
-                        return ready(Err(AppAPIError::UnauthorizedError(anyhow::anyhow!("Invalid Id."))));
+                        return ready(Err(AppAPIError::UnauthorizedError(anyhow::anyhow!(
+                            "Invalid Id."
+                        ))));
                     }
                 };
 
-                ready(Ok(AuthToken { id}))
-
-            },
-            Err(_) => ready(Err(AppAPIError::UnauthorizedError(anyhow::anyhow!("Invalid Access Token."))))
+                ready(Ok(AuthToken { id }))
+            }
+            Err(_) => ready(Err(AppAPIError::UnauthorizedError(anyhow::anyhow!(
+                "Invalid Access Token."
+            )))),
         }
     }
 }

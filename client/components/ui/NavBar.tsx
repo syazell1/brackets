@@ -7,7 +7,7 @@ import { authContextProvider } from "client/providers/AuthContext";
 import Link from "next/link";
 
 const NavBar = () => {
-  const { authDetails } = useContext(authContextProvider);
+  const { isLoading, isLoggedIn, usersInfo } = useContext(authContextProvider);
 
   return (
     <header className={styles.container}>
@@ -19,8 +19,8 @@ const NavBar = () => {
           <Input placeholder="Search" />
         </div>
         <div className={styles["menu-container"]}>
-          {authDetails.access_token?.length > 0 ? (
-            <p>Welcome User!</p>
+          {isLoading ? <p>Loading...</p> : isLoggedIn ? (
+            <p>Welcome {usersInfo.username}!</p>
           ) : (
             <ul>
               <li>

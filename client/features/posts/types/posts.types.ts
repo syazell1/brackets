@@ -1,3 +1,6 @@
+import { z } from 'zod'
+import { addPostInputSchema } from '../schemas/posts.schema'
+
 export interface PostsDetails {
   id: string,
   title: string,
@@ -12,3 +15,5 @@ interface PostsOwner {
   id: string,
   username: string
 }
+
+export type AddPostInput = z.infer<typeof addPostInputSchema>;
