@@ -102,7 +102,7 @@ pub async fn delete_comments_by_id(
     name = "Verifying comments from the database",
     skip(comment_id, user_id, pool)
 )]
-pub async fn verify_comments_by_id(
+pub async fn verify_comments_by_user_id(
     comment_id: &Uuid,
     user_id: &Uuid,
     pool: &mut Transaction<'_, Postgres>,
@@ -118,12 +118,42 @@ pub async fn verify_comments_by_id(
     let result = pool
         .fetch_optional(query)
         .await
-        .context("Failed to delete comments from the database.")
+        .context("Failed to fetch comments from the database.")
         .map_err(AppError::UnexpectedError)?;
 
     match result {
         Some(_) => Ok(()),
         None => Err(AppError::NotFoundError(anyhow!("Comment was not found."))),
+    }
+}
+
+#[tracing::instrument(name = "Verifying Comments from the database", skip(comment_id, pool))]
+pub async fn verify_comments_by_id(
+    comment_id: &str,
+    pool: &mut Transaction<'_, Postgres>,
+) -> Result<(), AppError> {
+    let post_id = uuid_parser(comment_id)?;
+
+    let query = sqlx::query!(
+        r#"
+            SELECT id FROM comments WHERE id = $1
+        "#,
+        post_id
+    );
+
+    let result = pool
+        .fetch_optional(query)
+        .await
+        .context("Failed to fetch post from the database.")
+        .map_err(AppError::UnexpectedError)?;
+
+    match result {
+        Some(_) => Ok(()),
+        None => {
+            return Err(AppError::NotFoundError(anyhow::anyhow!(
+                "Comment was not found."
+            )))
+        }
     }
 }
 
@@ -141,7 +171,8 @@ pub async fn fetch_posts_comments(
     let result = sqlx::query_as!(
         CommentData,
         r#"
-            SELECT c.id, c.content, c.created_at, (u.id, u.username) "owner!: CommentOwner" 
+            SELECT c.id, c.content, c.created_at, (u.id, u.username) "owner!: CommentOwner",
+            (SELECT COUNT(id) FROM like_comments lc WHERE lc.comment_id = c.id) "likes_count! : i64"
             FROM comments c
             INNER JOIN users u ON u.id = c.owner_id
             WHERE post_id = $1
