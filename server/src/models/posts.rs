@@ -30,3 +30,20 @@ pub struct PostStatusPath {
     pub id: String,
     pub command: String,
 }
+
+#[derive(serde::Deserialize)]
+pub struct PostLikeIds {
+    pub post_ids: Vec<Uuid>,
+}
+
+#[derive(serde::Serialize)]
+pub struct PostLikeStatus {
+    pub is_liked: bool,
+    pub post_id: Uuid,
+}
+
+impl PostLikeStatus {
+    pub fn new(is_liked: bool, post_id: Uuid) -> Self {
+        Self { is_liked, post_id }
+    }
+}
