@@ -14,7 +14,7 @@ use crate::{
     },
     configuration::JwtSettings,
     errors::AppAPIError,
-    models::{Credentials, UsersRegistrationInput},
+    models::{AuthInfo, Credentials, UsersRegistrationInput},
     utils::{decode_jwt, filter_app_err, generate_jwt, AuthToken},
 };
 
@@ -52,7 +52,7 @@ async fn register_user(
         .context("Failed to begin transaction.")
         .map_err(AppAPIError::UnexpectedError)?;
 
-    create_user_from_credentials(&id, &register_input, &mut transaction)
+    let user = create_user_from_credentials(&id, &register_input, &mut transaction)
         .await
         .map_err(filter_app_err)?;
 
@@ -78,9 +78,10 @@ async fn register_user(
         .max_age(Duration::days(7))
         .finish();
 
-    Ok(HttpResponse::Ok()
-        .cookie(cookie)
-        .json(AuthResponse { access_token: at }))
+    Ok(HttpResponse::Ok().cookie(cookie).json(AuthInfo {
+        access_token: at,
+        user,
+    }))
 }
 
 #[post("/login")]
@@ -95,11 +96,11 @@ async fn login_user(
         .validate()
         .map_err(AppAPIError::ValidationErrors)?;
 
-    let user_id = validate_user_credentials(&credentials.0, &pool)
+    let user = validate_user_credentials(&credentials.0, &pool)
         .await
         .map_err(filter_app_err)?;
 
-    let (at, rt) = generate_jwt(&user_id.to_string(), &jwt_settings)
+    let (at, rt) = generate_jwt(&user.id.to_string(), &jwt_settings)
         .context("Failed to gennerate JWT")
         .map_err(AppAPIError::UnexpectedError)?;
 
@@ -111,9 +112,10 @@ async fn login_user(
         .max_age(Duration::days(7))
         .finish();
 
-    Ok(HttpResponse::Ok()
-        .cookie(cookie)
-        .json(AuthResponse { access_token: at }))
+    Ok(HttpResponse::Ok().cookie(cookie).json(AuthInfo {
+        access_token: at,
+        user,
+    }))
 }
 
 #[get("/refresh")]

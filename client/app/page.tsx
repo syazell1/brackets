@@ -1,15 +1,15 @@
 import PageContainer from "client/components/layouts/PageContainer";
-import AddPostForm from "client/features/posts/components/AddPostForm";
+import PostMenu from "client/features/posts/components/PostMenu";
 import PostsLists from "client/features/posts/components/PostsList";
-import Link from "next/link";
+import styles from './page.module.css'
 
 const IndexPage = () => {
   return (
     <PageContainer>
-      <div>
-        <Link href="/posts/create">Add Post</Link>
+      <div className={styles["post-container"]}>
+        <PostMenu />
+        <PostsLists />
       </div>
-      <PostsLists />
     </PageContainer>
   )
 }
