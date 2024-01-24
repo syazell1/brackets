@@ -5,6 +5,8 @@ import Input from "./Input";
 import styles from './NavBar.module.css'
 import { authContextProvider } from "client/providers/AuthContext";
 import Link from "next/link";
+import Button from "./Button";
+import UserLoggedInMenu from "client/features/users/components/UserLoggedInMenu";
 
 const NavBar = () => {
   const { isLoading, isLoggedIn, usersInfo } = useContext(authContextProvider);
@@ -20,7 +22,7 @@ const NavBar = () => {
         </div>
         <div className={styles["menu-container"]}>
           {isLoading ? <p>Loading...</p> : isLoggedIn ? (
-            <p>Welcome {usersInfo.username}!</p>
+            <UserLoggedInMenu username={usersInfo.username} />
           ) : (
             <ul>
               <li>
