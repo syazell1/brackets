@@ -149,6 +149,34 @@ pub async fn verify_user_by_username(username: &str, pool: &PgPool) -> Result<()
     Ok(())
 }
 
+#[tracing::instrument(
+    name = "Validating User from the Database" 
+    skip(user_id, pool)
+)]
+pub async fn verify_user_by_id(user_id: &Uuid, pool: &PgPool) -> Result<(), AppError> {
+    let result = sqlx::query!(
+        r#"
+            SELECT id FROM users WHERE id = $1
+        "#,
+        user_id
+    )
+    .fetch_optional(pool)
+    .await
+    .context("Failed to fetch user from the database.")
+    .map_err(AppError::UnexpectedError)?;
+
+    match result {
+        Some(_) => (),
+        None => {
+            return Err(AppError::NotFoundError(anyhow::anyhow!(
+                "User was not found."
+            )))
+        }
+    };
+
+    Ok(())
+}
+
 #[tracing::instrument(name = "fetching user from the database", skip(user_id, pool))]
 pub async fn get_user_by_id(user_id: &Uuid, pool: &PgPool) -> Result<UserInfo, AppError> {
     let result = sqlx::query_as!(
