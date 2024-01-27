@@ -179,6 +179,7 @@ pub async fn get_users_posts_by_username(
             FROM posts p
             INNER JOIN users u ON u.id = p.owner_id
             WHERE u.username = $1
+            ORDER BY created_at DESC 
             OFFSET $2
             LIMIT $3
         "#,
@@ -234,6 +235,7 @@ pub async fn get_all_posts(
             (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64" 
             FROM posts p
             INNER JOIN users u ON u.id = p.owner_id
+            ORDER BY created_at DESC 
             OFFSET $1
             LIMIT $2
         "#,

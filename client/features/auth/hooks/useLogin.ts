@@ -9,7 +9,7 @@ import { authContextProvider } from "client/providers/AuthContext"
 
 export const useLogin = () => {
   const router = useRouter();
-  const { setDetails } = useContext(authContextProvider);
+  const { setDetails, setIsLoggedInHandler } = useContext(authContextProvider);
 
   return useMutation({
     mutationFn: (data: LoginInput) => {
@@ -19,7 +19,8 @@ export const useLogin = () => {
       toast.success("Login success!, Welcome!");
 
       client.defaults.headers.common["Authorization"] = `Bearer ${data.access_token}`;
-      setDetails(data);
+      setDetails(data.user)
+      setIsLoggedInHandler(true)
 
       router.push('/')
     }

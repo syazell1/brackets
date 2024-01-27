@@ -6,7 +6,7 @@ use tracing_actix_web::TracingLogger;
 
 use crate::{
     configuration::JwtSettings,
-    routes::{auth_scope, comments_scope, health_check, posts_scope},
+    routes::{auth_scope, comments_scope, follows_scope, health_check, posts_scope},
 };
 
 pub fn run(
@@ -34,7 +34,8 @@ pub fn run(
                     .route("/health_check", web::get().to(health_check))
                     .service(auth_scope())
                     .service(posts_scope())
-                    .service(comments_scope()),
+                    .service(comments_scope())
+                    .service(follows_scope()),
             )
             .app_data(connection.clone())
             .app_data(jwt_settings.clone())
