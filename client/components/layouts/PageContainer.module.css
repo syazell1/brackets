@@ -4,6 +4,10 @@
   justify-content: space-between;
 }
 
+.left {
+  flex-basis: 250px;
+}
+
 .main-container {
   padding: .8rem;
   flex-basis: 50rem;

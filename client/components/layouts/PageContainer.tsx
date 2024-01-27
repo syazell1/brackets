@@ -9,6 +9,7 @@ const PageContainer = ({ children }: { children: ReactNode }) => {
       <NavBar />
       <div className={styles.container}>
         <SideBar />
+        <div className={styles.left}></div>
         <main className={styles["main-container"]}>
           {children}
         </main>

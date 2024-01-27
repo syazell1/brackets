@@ -18,7 +18,7 @@ pub async fn create_user_from_credentials(
     user_id: &Uuid,
     credentials: &UsersRegistrationInput,
     pool: &mut Transaction<'_, Postgres>,
-) -> Result<(), AppError> {
+) -> Result<UserInfo, AppError> {
     let params = argon2::Params::new(15000, 2, 1, None)
         .context("Failed to set Argon2 Params.")
         .map_err(AppError::UnexpectedError)?;
@@ -46,7 +46,10 @@ pub async fn create_user_from_credentials(
         .context("Failed to Insert user credentials from the database.")
         .map_err(AppError::UnexpectedError)?;
 
-    Ok(())
+    Ok(UserInfo {
+        id: user_id.to_owned(),
+        username: credentials.username.to_owned(),
+    })
 }
 
 #[tracing::instrument(
@@ -56,7 +59,7 @@ pub async fn create_user_from_credentials(
 pub async fn validate_user_credentials(
     credentials: &Credentials,
     pool: &PgPool,
-) -> Result<Uuid, AppError> {
+) -> Result<UserInfo, AppError> {
     let row = sqlx::query!(
         r#"SELECT * FROM users WHERE username = $1"#,
         credentials.username
@@ -66,8 +69,8 @@ pub async fn validate_user_credentials(
     .context("Failed to fetch user from the database.")
     .map_err(AppError::UnexpectedError)?;
 
-    let (id, password) = match row {
-        Some(data) => (data.id, data.password),
+    let (id, username, password) = match row {
+        Some(data) => (data.id, data.username, data.password),
         None => {
             return Err(AppError::UnauthorizedError(anyhow::anyhow!(
                 "Invalid Username."
@@ -87,7 +90,7 @@ pub async fn validate_user_credentials(
         .context("Invalid Password.")
         .map_err(AppError::UnauthorizedError)?;
 
-    Ok(id)
+    Ok(UserInfo { id, username })
 }
 
 #[tracing::instrument(
@@ -139,6 +142,34 @@ pub async fn verify_user_by_username(username: &str, pool: &PgPool) -> Result<()
         None => {
             return Err(AppError::NotFoundError(anyhow::anyhow!(
                 "Username was not found."
+            )))
+        }
+    };
+
+    Ok(())
+}
+
+#[tracing::instrument(
+    name = "Validating User from the Database" 
+    skip(user_id, pool)
+)]
+pub async fn verify_user_by_id(user_id: &Uuid, pool: &PgPool) -> Result<(), AppError> {
+    let result = sqlx::query!(
+        r#"
+            SELECT id FROM users WHERE id = $1
+        "#,
+        user_id
+    )
+    .fetch_optional(pool)
+    .await
+    .context("Failed to fetch user from the database.")
+    .map_err(AppError::UnexpectedError)?;
+
+    match result {
+        Some(_) => (),
+        None => {
+            return Err(AppError::NotFoundError(anyhow::anyhow!(
+                "User was not found."
             )))
         }
     };
