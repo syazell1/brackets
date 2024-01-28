@@ -3,7 +3,10 @@ use anyhow::{anyhow, Context};
 use sqlx::PgPool;
 
 use crate::{
-    app::{follow_user, get_users_followers, verify_user_by_id, verify_user_follow_status},
+    app::{
+        follow_user, get_users_followers, get_users_followings, verify_user_by_id,
+        verify_user_follow_status,
+    },
     errors::AppAPIError,
     models::PageFilters,
     utils::{filter_app_err, uuid_parser, AuthToken},
@@ -14,6 +17,7 @@ pub fn follows_scope() -> Scope {
         .service(follow_user_by_id)
         .service(unfollow_user_by_id)
         .service(fetch_users_followers)
+        .service(fetch_users_followings)
 }
 
 #[post("/{id}/follow")]
@@ -106,6 +110,31 @@ async fn fetch_users_followers(
 
     let result = get_users_followers(
         &followee_id,
+        page_filters.page.unwrap_or_else(|| 1),
+        page_filters.page_size.unwrap_or_else(|| 10),
+        &pool,
+    )
+    .await
+    .map_err(filter_app_err)?;
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
+#[get("/{id}/followings")]
+#[tracing::instrument(name = "Fetching users followings", skip(id, page_filters, pool))]
+async fn fetch_users_followings(
+    id: web::Path<String>,
+    page_filters: web::Query<PageFilters>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, AppAPIError> {
+    let follower_id = uuid_parser(&id).map_err(filter_app_err)?;
+
+    verify_user_by_id(&follower_id, &pool)
+        .await
+        .map_err(filter_app_err)?;
+
+    let result = get_users_followings(
+        &follower_id,
         page_filters.page.unwrap_or_else(|| 1),
         page_filters.page_size.unwrap_or_else(|| 10),
         &pool,
