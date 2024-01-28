@@ -118,7 +118,7 @@ pub async fn get_users_followers(
     let total_items_count = sqlx::query_scalar!(
         r#"
             SELECT count(id) FROM follows
-            WHERE followee_id = $1
+            WHERE follower_id = $1
            "#,
         followee_id
     )
@@ -150,7 +150,7 @@ pub async fn get_users_followings(
         r#"
            SELECT u.id, u.username FROM follows f 
            INNER JOIN users u ON u.id = f.followee_id
-           WHERE followee_id = $1
+           WHERE follower_id = $1
            OFFSET $2
            LIMIT $3
         "#,
