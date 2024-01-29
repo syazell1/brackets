@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use chrono::Utc;
 use sqlx::{types::BitVec, Executor, PgPool, Postgres, Transaction};
 use uuid::Uuid;
@@ -266,4 +266,33 @@ pub async fn get_all_posts(
     );
 
     Ok(page_result)
+}
+
+#[tracing::instrument(name = "Fetching Post from the database", skip(post_id, pool))]
+pub async fn get_post_by_id(post_id: &Uuid, pool: &PgPool) -> Result<PostsData, AppError> {
+    let row = sqlx::query_as!(
+        PostsData,
+        r#"
+            SELECT p.id, p.title, p.content, p.created_at,
+            (u.id, u.username) "owner!: PostOwner",
+            (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) "likes_count!: i64",
+            (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64" 
+            FROM posts p
+            INNER JOIN users u ON u.id = p.owner_id
+            WHERE p.id = $1 
+        "#,
+        post_id
+    )
+    .fetch_optional(pool)
+    .await
+    .context("Failed to fetch posts from the database.")
+    .map_err(AppError::UnexpectedError)?;
+
+    match row {
+        Some(data) => Ok(data),
+        None => Err(AppError::NotFoundError(anyhow!(
+            "Post with Id '{0}' was not found",
+            post_id
+        ))),
+    }
 }

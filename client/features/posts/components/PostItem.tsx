@@ -5,6 +5,8 @@ import { PostsDetails } from "../types/posts.types";
 import Card from "client/components/layouts/Card";
 import styles from './PostItem.module.css'
 import { Heart, MessageCircleMore } from "lucide-react";
+import PostItemMenu from "./PostItemMenu";
+import Link from "next/link";
 
 type PostItemType = {
   data: PostsDetails
@@ -17,7 +19,8 @@ const PostItem = forwardRef<HTMLElement, PostItemType>(
       <div>
         <div className={styles.contents}>
           <div className={styles.title}>
-            <h2>{title}</h2>
+            <h2><Link href={`/posts/${id}`}>{title}</Link></h2>
+            <PostItemMenu />
           </div>
           <div className={styles.controls}>
             <div className={styles.btn}>
