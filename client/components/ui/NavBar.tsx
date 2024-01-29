@@ -7,15 +7,17 @@ import { authContextProvider } from "client/providers/AuthContext";
 import Link from "next/link";
 import Button from "./Button";
 import UserLoggedInMenu from "client/features/users/components/UserLoggedInMenu";
+import { useRouter } from "next/navigation";
 
 const NavBar = () => {
   const { isLoading, isLoggedIn, usersInfo } = useContext(authContextProvider);
+  const router = useRouter();
 
   return (
     <header className={styles.container}>
       <nav className={styles["nav-container"]}>
         <div className={styles["title-container"]}>
-          <h2>brackets</h2>
+          <h2 onClick={() => router.push('/')}>brackets</h2>
         </div>
         <div className={styles["search-container"]}>
           <Input placeholder="Search" />

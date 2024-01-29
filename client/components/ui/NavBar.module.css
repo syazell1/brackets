@@ -3,6 +3,7 @@
   top: 0;
   background: #fff;
   box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+  z-index: 100;
 }
 
 .nav-container {
@@ -15,6 +16,11 @@
 .title-container {
   flex-basis: 250px;
   padding: .8rem;
+}
+
+.title-container h2:hover {
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .search-container {
