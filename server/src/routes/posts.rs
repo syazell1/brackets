@@ -7,12 +7,12 @@ use validator::Validate;
 use crate::{
     app::{
         add_like_to_post, check_post_like, create_users_posts, get_all_posts, get_liked_posts,
-        get_users_posts_by_username, manage_users_posts, remove_like_to_post, update_users_posts,
-        verify_posts_by_id, verify_user_by_username, verify_users_posts_by_id,
+        get_post_by_id, get_users_posts_by_username, manage_users_posts, remove_like_to_post,
+        update_users_posts, verify_posts_by_id, verify_user_by_username, verify_users_posts_by_id,
     },
     errors::AppAPIError,
     models::{PageFilters, PostLikeIds, PostStatusPath, PostsInput},
-    utils::{filter_app_err, AuthToken},
+    utils::{filter_app_err, uuid_parser, AuthToken},
 };
 
 use super::get_posts_comments;
@@ -22,8 +22,8 @@ pub fn posts_scope() -> Scope {
         .service(create_posts)
         .service(update_posts)
         .service(manage_posts)
-        .service(fetch_posts_by_username)
         .service(fetch_all_posts)
+        .service(fetch_post_by_id)
         .service(get_posts_comments)
         .service(like_post)
         .service(unlike_post)
@@ -163,6 +163,21 @@ async fn fetch_all_posts(
     )
     .await
     .map_err(filter_app_err)?;
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
+#[get("/{id}")]
+#[tracing::instrument(name = "Fetching Posts", skip(id, pool))]
+async fn fetch_post_by_id(
+    id: web::Path<String>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, AppAPIError> {
+    let post_id = uuid_parser(&id).map_err(filter_app_err)?;
+
+    let result = get_post_by_id(&post_id, &pool)
+        .await
+        .map_err(filter_app_err)?;
 
     Ok(HttpResponse::Ok().json(result))
 }
