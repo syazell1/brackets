@@ -7,8 +7,8 @@ use validator::Validate;
 use crate::{
     app::{
         add_like_to_post, check_post_like, create_users_posts, get_all_posts, get_liked_posts,
-        get_post_by_id, get_users_posts_by_username, manage_users_posts, remove_like_to_post,
-        update_users_posts, verify_posts_by_id, verify_user_by_username, verify_users_posts_by_id,
+        get_post_by_id, manage_users_posts, remove_like_to_post, update_users_posts,
+        verify_posts_by_id, verify_users_posts_by_id,
     },
     errors::AppAPIError,
     models::{PageFilters, PostLikeIds, PostStatusPath, PostsInput},
@@ -125,29 +125,6 @@ async fn manage_posts(
         .map_err(AppAPIError::UnexpectedError)?;
 
     Ok(HttpResponse::NoContent().finish())
-}
-
-#[get("/{username}")]
-#[tracing::instrument(name = "Fetching Posts", skip(username, page_filters, pool))]
-async fn fetch_posts_by_username(
-    username: web::Path<String>,
-    page_filters: web::Query<PageFilters>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    verify_user_by_username(&username, &pool)
-        .await
-        .map_err(filter_app_err)?;
-
-    let result = get_users_posts_by_username(
-        &username,
-        page_filters.page.unwrap_or(1),
-        page_filters.page_size.unwrap_or(10),
-        &pool,
-    )
-    .await
-    .map_err(filter_app_err)?;
-
-    Ok(HttpResponse::Ok().json(result))
 }
 
 #[get("")]
