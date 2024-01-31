@@ -8,7 +8,6 @@ use crate::{
         add_comments_to_post, add_like_to_comment, check_comment_like, delete_comments_by_id,
         fetch_posts_comments, get_liked_comments, remove_like_to_comment, update_comments_by_id,
         verify_comments_by_id, verify_comments_by_user_id, verify_posts_by_id,
-        verify_users_posts_by_id,
     },
     errors::AppAPIError,
     models::{CommentInput, CommentLikeIds, PageFilters},
@@ -46,7 +45,7 @@ pub async fn add_comments(
         .context("Failed to Initialize SQL Transactions.")
         .map_err(AppAPIError::UnexpectedError)?;
 
-    verify_users_posts_by_id(&comment.post_id, &auth_token.id, &mut transaction)
+    verify_posts_by_id(&comment.post_id, &mut transaction)
         .await
         .map_err(filter_app_err)?;
 
@@ -87,7 +86,7 @@ pub async fn update_comments(
         .context("Failed to Initialize SQL Transactions.")
         .map_err(AppAPIError::UnexpectedError)?;
 
-    verify_users_posts_by_id(&comment.post_id, &auth_token.id, &mut transaction)
+    verify_posts_by_id(&comment.post_id, &mut transaction)
         .await
         .map_err(filter_app_err)?;
 
