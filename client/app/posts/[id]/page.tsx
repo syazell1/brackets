@@ -1,16 +1,18 @@
 import { AxiosError } from "axios"
 import PageContainer from "client/components/layouts/PageContainer"
 import { POSTS_URL } from "client/constants/server-config"
+import CommentsList from "client/features/comments/components/CommentsList"
 import PostDetails from "client/features/posts/components/PostDetails"
 import { PostsDetails } from "client/features/posts/types/posts.types"
 import client from "client/libs/axios"
 import { notFound } from "next/navigation"
+import styles from './PostDetailsPage.module.css'
 
-type PageDetailsPageParamsType = {
+type PostDetailsPageParamsType = {
   id: string
 }
 
-const PageDetailsPage = async ({ params }: { params: PageDetailsPageParamsType }) => {
+const PostDetailsPage = async ({ params }: { params: PostDetailsPageParamsType }) => {
   const res = await client.get<PostsDetails>(`${POSTS_URL}/${params.id}`)
 
   if (res instanceof AxiosError && res.status === 404) {
@@ -19,9 +21,12 @@ const PageDetailsPage = async ({ params }: { params: PageDetailsPageParamsType }
 
   return (
     <PageContainer>
-      <PostDetails data={res.data} />
+      <div className={styles.container}>
+        <PostDetails data={res.data} />
+        <CommentsList postId={res.data.id} />
+      </div>
     </PageContainer>
   )
 }
 
-export default PageDetailsPage;
+export default PostDetailsPage;
