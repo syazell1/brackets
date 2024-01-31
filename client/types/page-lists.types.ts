@@ -9,5 +9,5 @@ interface PageMetadata {
 
 export interface PageList<T> {
   data: T,
-  pageMetadata: PageMetadata
+  page_metadata: PageMetadata
 }
