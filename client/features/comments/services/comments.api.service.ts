@@ -8,3 +8,21 @@ export const getPostsComments = async (postId: string, page: number) => {
 
   return res.data;
 }
+
+// TODO : add add comments service
+// add schema and validations
+export const addComments = () => {
+
+}
+
+// TODO : add update comments service
+// add schema and validations
+export const updateComments = () => {
+
+}
+
+
+// TODO : add delete  comments service
+export const deleteComments = () => {
+
+}
