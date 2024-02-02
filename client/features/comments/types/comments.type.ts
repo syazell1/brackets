@@ -1,3 +1,6 @@
+import { addPostInputSchema } from "client/features/posts/schemas/posts.schema"
+import { z } from "zod"
+
 export interface CommentsData {
   id: string,
   content: string,
@@ -10,3 +13,8 @@ interface Owner {
   id: string,
   username: string
 }
+
+
+export type AddCommentInput = z.infer<typeof addPostInputSchema>;
+
+export type UpdateCommentInput = z.infer<typeof addPostInputSchema>;
