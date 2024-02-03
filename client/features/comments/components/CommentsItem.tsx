@@ -2,7 +2,10 @@
 
 import Card from "client/components/layouts/Card"
 import { CommentsData } from "../types/comments.type"
-import { forwardRef } from "react"
+import { forwardRef, useContext } from "react"
+import styles from './CommentsItem.module.css'
+import CommentItemMenu from "./CommentItemMenu"
+import { authContextProvider } from "client/providers/AuthContext"
 
 type CommentsItemType = {
   data: CommentsData
@@ -10,10 +13,13 @@ type CommentsItemType = {
 
 const CommentsItem = forwardRef<HTMLElement, CommentsItemType>(
   ({ data }, ref) => {
-
+    const { isLoggedIn } = useContext(authContextProvider)
     const commentItemContent = (
-      <div>
-        {data.content}
+      <div className={styles.container}>
+        <div>
+          {data.content}
+        </div>
+        {isLoggedIn && <CommentItemMenu />}
       </div>
     )
 

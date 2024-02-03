@@ -1,5 +1,5 @@
-import { addPostInputSchema } from "client/features/posts/schemas/posts.schema"
 import { z } from "zod"
+import { AddCommentInputSchema } from "../schemas/comments.schema";
 
 export interface CommentsData {
   id: string,
@@ -15,6 +15,6 @@ interface Owner {
 }
 
 
-export type AddCommentInput = z.infer<typeof addPostInputSchema>;
+export type AddCommentInput = z.infer<typeof AddCommentInputSchema>;
 
-export type UpdateCommentInput = z.infer<typeof addPostInputSchema>;
+export type UpdateCommentInput = z.infer<typeof AddCommentInputSchema>;
