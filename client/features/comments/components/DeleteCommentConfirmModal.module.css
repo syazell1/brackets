@@ -1,0 +1,10 @@
+.content {
+  text-align: center;
+  font-weight: 600;
+}
+
+.controller {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}

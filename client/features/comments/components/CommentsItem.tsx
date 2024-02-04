@@ -13,13 +13,13 @@ type CommentsItemType = {
 
 const CommentsItem = forwardRef<HTMLElement, CommentsItemType>(
   ({ data }, ref) => {
-    const { isLoggedIn } = useContext(authContextProvider)
+    const { isLoggedIn, usersInfo } = useContext(authContextProvider)
     const commentItemContent = (
       <div className={styles.container}>
         <div>
           {data.content}
         </div>
-        {isLoggedIn && <CommentItemMenu />}
+        {(isLoggedIn && data.owner.username == usersInfo.username) && <CommentItemMenu commentId={data.id} />}
       </div>
     )
 
