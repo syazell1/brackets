@@ -12,6 +12,7 @@ pub struct CommentData {
     pub id: Uuid,
     pub content: String,
     pub likes_count: i64,
+    pub post_id: Uuid,
     pub created_at: DateTime<Utc>,
     pub owner: CommentOwner,
 }
