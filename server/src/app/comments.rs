@@ -171,7 +171,7 @@ pub async fn fetch_posts_comments(
     let result = sqlx::query_as!(
         CommentData,
         r#"
-            SELECT c.id, c.content, c.created_at, (u.id, u.username) "owner!: CommentOwner",
+            SELECT c.id, c.content, c.created_at, c.post_id, (u.id, u.username) "owner!: CommentOwner",
             (SELECT COUNT(id) FROM like_comments lc WHERE lc.comment_id = c.id) "likes_count! : i64"
             FROM comments c
             INNER JOIN users u ON u.id = c.owner_id

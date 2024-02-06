@@ -1,0 +1,10 @@
+.container {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.controller {
+  display: flex;
+  gap: 1rem;
+}
