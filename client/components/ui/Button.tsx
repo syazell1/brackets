@@ -11,7 +11,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     let btnStyle = `${styles.btn} `
 
     variant == "primary" ? btnStyle += styles.primary : ""
-    variant == "secondary" ? btnStyle += styles.seconary : ""
+    variant == "secondary" ? btnStyle += styles.secondary : ""
 
     return (
       <button {...props}
