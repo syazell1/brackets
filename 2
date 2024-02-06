@@ -1,6 +1,7 @@
 'use client'
 
 import { Controller, useForm } from 'react-hook-form'
+import styles from './UpdateComment.module.css'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AddCommentInputSchema } from '../schemas/comments.schema'
 import MDEditor from '@uiw/react-md-editor'
@@ -8,44 +9,25 @@ import ErrorMessage from 'client/components/ui/ErrorMessage'
 import { useUpdateComment } from '../hooks/useUpdateComment'
 import Button from 'client/components/ui/Button'
 import { CommentsData, UpdateCommentInput } from '../types/comments.type'
-import styles from './UpdateCommentForm.module.css'
-import { useEffect } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 
 type UpdateCommentFormType = {
   commentData: CommentsData,
   setUpdateCommentHandler: () => void
 }
 
-const UpdateCommentForm = ({ commentData, setUpdateCommentHandler }: UpdateCommentFormType) => {
-  const queryClient = useQueryClient();
+const UpdateCommentForm = ({ commentData }: UpdateCommentFormType) => {
   const {
     mutate,
-    isPending,
-    isSuccess
+    isPending
   } = useUpdateComment()
   const {
     handleSubmit,
     control
   } = useForm<UpdateCommentInput>({
-    resolver: zodResolver(AddCommentInputSchema),
-    defaultValues: {
-      content: commentData.content,
-      post_id: commentData.post_id
-    }
+    resolver: zodResolver(AddCommentInputSchema)
   })
 
-  useEffect(() => {
-    if (isSuccess) {
-      queryClient.invalidateQueries({
-        queryKey: ["comments", { id: commentData.post_id }]
-      })
-      setUpdateCommentHandler();
-    }
-  }, [isSuccess])
-
-  const updateCommentHandler = (data: UpdateCommentInput) => {
-
+  const addCommentHandler = (data: UpdateCommentInput) => {
     mutate({
       id: commentData.id,
       data
@@ -53,10 +35,8 @@ const UpdateCommentForm = ({ commentData, setUpdateCommentHandler }: UpdateComme
   }
 
 
-
   return (
-    <form onSubmit={handleSubmit(updateCommentHandler)}
-      className={styles.container}>
+    <form onSubmit={handleSubmit(addCommentHandler)} className={styles.container}>
       <div data-color-mode="light">
         <Controller
           control={control}
@@ -74,11 +54,11 @@ const UpdateCommentForm = ({ commentData, setUpdateCommentHandler }: UpdateComme
           }}
         />
       </div>
-      <div className={styles.controller}>
-        <Button type='submit' variant="primary">
+      <div>
+        <Button variant="primary">
           {isPending ? "Loading..." : "Submit"}
         </Button>
-        <Button variant="secondary" onClick={setUpdateCommentHandler}>
+        <Button variant="secondary">
           Cancel
         </Button>
       </div>

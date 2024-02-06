@@ -2,10 +2,12 @@
 
 import Card from "client/components/layouts/Card"
 import { CommentsData } from "../types/comments.type"
-import { forwardRef, useContext } from "react"
+import { forwardRef, useContext, useState } from "react"
 import styles from './CommentsItem.module.css'
 import CommentItemMenu from "./CommentItemMenu"
 import { authContextProvider } from "client/providers/AuthContext"
+import UpdateCommentForm from "./UpdateCommentForm"
+import DeleteCommentConfirmModal from "./DeleteCommentConfirmModal"
 
 type CommentsItemType = {
   data: CommentsData
@@ -14,13 +16,35 @@ type CommentsItemType = {
 const CommentsItem = forwardRef<HTMLElement, CommentsItemType>(
   ({ data }, ref) => {
     const { isLoggedIn, usersInfo } = useContext(authContextProvider)
+    const [isUpdate, setIsUpdate] = useState(false);
+    const [isDelete, setIsDelete] = useState(false);
+
     const commentItemContent = (
-      <div className={styles.container}>
-        <div>
-          {data.content}
+      <>
+        {isDelete && <DeleteCommentConfirmModal commentData={data} closeModalHandler={() => setIsDelete(false)} />}
+        <div className={!isUpdate ? styles.container : ""}>
+          {isUpdate ? (
+            <>
+              <UpdateCommentForm
+                setUpdateCommentHandler={() => setIsUpdate(false)}
+                commentData={data} />
+            </>
+          ) :
+            (
+              <>
+                <div>
+                  {data.content}
+                </div>
+                {(isLoggedIn && data.owner.username == usersInfo.username) &&
+                  <CommentItemMenu
+                    setUpdateCommentHandler={() => setIsUpdate(true)}
+                    setDeleteCommentHandler={() => setIsDelete(true)}
+                  />
+                }
+              </>
+            )}
         </div>
-        {(isLoggedIn && data.owner.username == usersInfo.username) && <CommentItemMenu commentId={data.id} />}
-      </div>
+      </>
     )
 
     return ref ? (

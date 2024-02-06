@@ -4,13 +4,14 @@ import { useDeleteComment } from '../hooks/useDeleteComment'
 import { useEffect } from 'react'
 import Button from 'client/components/ui/Button'
 import { useQueryClient } from '@tanstack/react-query'
+import { CommentsData } from '../types/comments.type'
 
 type DeleteCommentConfirmModalType = {
-  commentId: string
+  commentData: CommentsData,
   closeModalHandler: () => void
 }
 
-const DeleteCommentConfirmModal = ({ commentId, closeModalHandler }: DeleteCommentConfirmModalType) => {
+const DeleteCommentConfirmModal = ({ commentData, closeModalHandler }: DeleteCommentConfirmModalType) => {
   const queryClient = useQueryClient();
   const {
     mutate,
@@ -21,10 +22,7 @@ const DeleteCommentConfirmModal = ({ commentId, closeModalHandler }: DeleteComme
   useEffect(() => {
     if (isSuccess) {
       queryClient.invalidateQueries({
-
-        // TODO: add post id in the id object
-        // to invalidate only the comments on the certain post
-        queryKey: ["comments"]
+        queryKey: ["comments", { id: commentData.post_id }]
       })
 
       closeModalHandler();
@@ -32,7 +30,7 @@ const DeleteCommentConfirmModal = ({ commentId, closeModalHandler }: DeleteComme
   }, [isSuccess])
 
   const submitDeleteHandler = () => {
-    mutate(commentId)
+    mutate(commentData.id)
   }
 
   return (

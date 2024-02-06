@@ -2,19 +2,16 @@
 
 import { MoreVertical } from "lucide-react";
 import styles from './CommentItemMenu.module.css'
-import { useState } from "react";
-import DeleteCommentConfirmModal from "./DeleteCommentConfirmModal";
 
 type CommentItemMenuType = {
-  commentId: string
+  setUpdateCommentHandler: () => void,
+  setDeleteCommentHandler: () => void
 }
 
-const CommentItemMenu = ({ commentId }: CommentItemMenuType) => {
-  const [isDelete, setIsDelete] = useState(false)
+const CommentItemMenu = ({ setDeleteCommentHandler, setUpdateCommentHandler }: CommentItemMenuType) => {
 
   return (
     <>
-      {isDelete && <DeleteCommentConfirmModal commentId={commentId} closeModalHandler={() => setIsDelete(false)} />}
       <div className={styles.container}>
         <div className={styles["dropdown-btn"]}>
           <MoreVertical />
@@ -23,8 +20,8 @@ const CommentItemMenu = ({ commentId }: CommentItemMenuType) => {
           <h4>Comments Menu</h4>
           <hr />
           <ul className={styles["menu-container"]}>
-            <li>Update</li>
-            <li onClick={() => setIsDelete(true)}>Delete</li>
+            <li onClick={setUpdateCommentHandler}>Update</li>
+            <li onClick={setDeleteCommentHandler}>Delete</li>
           </ul>
         </div>
       </div>
