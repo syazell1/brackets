@@ -15,3 +15,17 @@ export const addPost = async (data: AddPostInput) => {
 
   return res.data;
 }
+
+// TODO: add update post service
+export const updatePost = async (data: AddPostInput) => {
+  const res = await client.post(`${POSTS_URL}`, data);
+
+  return res.data;
+}
+
+// TODO: add delete post service
+export const deletePost = async (data: AddPostInput) => {
+  const res = await client.post(`${POSTS_URL}`, data);
+
+  return res.data;
+}
