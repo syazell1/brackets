@@ -13,23 +13,23 @@ type PostItemType = {
 }
 
 const PostItem = forwardRef<HTMLElement, PostItemType>(
-  ({ data: { id, title, likes_count, comments_count } }, ref) => {
+  ({ data }, ref) => {
 
     const postItemContent = (
       <div>
         <div className={styles.contents}>
           <div className={styles.title}>
-            <h2><Link href={`/posts/${id}`}>{title}</Link></h2>
-            <PostItemMenu />
+            <h2><Link href={`/posts/${data.id}`}>{data.title}</Link></h2>
+            <PostItemMenu data={data} />
           </div>
           <div className={styles.controls}>
             <div className={styles.btn}>
               <Heart />
-              <p>{likes_count}</p>
+              <p>{data.likes_count}</p>
             </div>
             <div className={styles.btn}>
               <MessageCircleMore />
-              <p>{comments_count}</p>
+              <p>{data.comments_count}</p>
             </div>
           </div>
         </div>

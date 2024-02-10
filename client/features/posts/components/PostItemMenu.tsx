@@ -2,8 +2,16 @@
 
 import { MoreVertical } from "lucide-react";
 import styles from './PostItemMenu.module.css'
+import { PostsDetails } from "../types/posts.types";
+import { useRouter } from "next/navigation";
 
-const PostItemMenu = () => {
+type PostItemMenuType = {
+  data: PostsDetails
+}
+
+const PostItemMenu = ({ data }: PostItemMenuType) => {
+  const router = useRouter();
+
   return (
     <div className={styles.container}>
       <div className={styles["dropdown-btn"]}>
@@ -14,7 +22,7 @@ const PostItemMenu = () => {
         <hr />
         <ul className={styles["menu-container"]}>
           <li>Copy Link</li>
-          <li>Update</li>
+          <li onClick={() => router.push(`/posts/${data.id}/update`)}>Update</li>
           <li>Delete</li>
         </ul>
       </div>

@@ -1,7 +1,7 @@
 import axios from "axios"
 import { POSTS_URL } from "client/constants/server-config"
 import { PageList } from "client/types/page-lists.types"
-import { AddPostInput, PostsDetails } from "../types/posts.types"
+import { AddPostInput, PostsDetails, UpdatePostInput } from "../types/posts.types"
 import client from "client/libs/axios"
 
 export const getPosts = async (page: number) => {
@@ -16,16 +16,14 @@ export const addPost = async (data: AddPostInput) => {
   return res.data;
 }
 
-// TODO: add update post service
-export const updatePost = async (data: AddPostInput) => {
-  const res = await client.post(`${POSTS_URL}`, data);
+export const updatePost = async (id: string, data: UpdatePostInput) => {
+  const res = await client.patch(`${POSTS_URL}/${id}`, data);
 
   return res.data;
 }
 
-// TODO: add delete post service
-export const deletePost = async (data: AddPostInput) => {
-  const res = await client.post(`${POSTS_URL}`, data);
+export const deletePost = async (id: string) => {
+  const res = await client.delete(`${POSTS_URL}/${id}`);
 
   return res.data;
 }
