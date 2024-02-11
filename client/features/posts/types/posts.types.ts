@@ -17,3 +17,5 @@ interface PostsOwner {
 }
 
 export type AddPostInput = z.infer<typeof addPostInputSchema>;
+
+export type UpdatePostInput = z.infer<typeof addPostInputSchema>;
