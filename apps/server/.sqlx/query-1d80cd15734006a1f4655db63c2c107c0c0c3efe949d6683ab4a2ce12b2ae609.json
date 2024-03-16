@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE comments \n            SET content = $1\n            WHERE id = $2 AND owner_id = $3 AND post_id = $4\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1d80cd15734006a1f4655db63c2c107c0c0c3efe949d6683ab4a2ce12b2ae609"
+}

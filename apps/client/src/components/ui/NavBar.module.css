@@ -1,0 +1,44 @@
+.container {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+  z-index: 100;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-container {
+  flex-basis: 250px;
+  padding: .8rem;
+}
+
+.title-container h2:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.search-container {
+  flex-basis: 50rem;
+  padding: 0 1rem 0 1rem;
+}
+
+.menu-container {
+  padding: 1rem;
+  flex-basis: 250px;
+}
+
+.menu-container ul {
+  display: flex;
+  gap: 1rem;
+}
+
+.menu-container a {
+  text-decoration: none;
+  color: #444;
+}

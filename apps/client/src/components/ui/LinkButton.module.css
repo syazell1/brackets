@@ -1,0 +1,19 @@
+.btn {
+  border: none;
+  padding: .5rem 1rem;
+  border-radius: .5rem;
+  font-weight: bold;
+  width: 100%;
+  text-decoration: none;
+}
+
+.primary {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.primary:hover {
+  background: #60a5fa;
+  color: #fff;
+  cursor: pointer;
+}

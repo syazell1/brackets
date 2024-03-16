@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE posts SET title = $1, content = $2, updated_at = $3\n            WHERE id = $4 AND owner_id = $5\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3a58fc0c16624ba5035ca676fb6cc3b7468befcacd5aa28728e2144193cdf929"
+}
