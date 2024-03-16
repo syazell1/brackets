@@ -1,0 +1,9 @@
+app:
+  host : 127.0.0.1
+database:
+  username : admin
+  password: root
+  host: localhost 
+  port: 5432
+  database_name : brackets_db 
+  require_ssl: false

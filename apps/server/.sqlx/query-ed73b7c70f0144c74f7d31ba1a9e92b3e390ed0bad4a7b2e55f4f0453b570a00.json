@@ -1,0 +1,59 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT p.id, p.title, p.content, p.created_at,\n            (u.id, u.username) \"owner!: PostOwner\",\n            (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) \"likes_count!: i64\",\n            (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) \"comments_count!: i64\" \n            FROM posts p\n            INNER JOIN users u ON u.id = p.owner_id\n            ORDER BY created_at DESC \n            OFFSET $1\n            LIMIT $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "owner!: PostOwner",
+        "type_info": "Record"
+      },
+      {
+        "ordinal": 5,
+        "name": "likes_count!: i64",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "comments_count!: i64",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "ed73b7c70f0144c74f7d31ba1a9e92b3e390ed0bad4a7b2e55f4f0453b570a00"
+}
