@@ -1,18 +1,23 @@
 use secrecy::Secret;
 use uuid::Uuid;
 
-#[derive(serde::Deserialize, validator::Validate)]
-pub struct UsersRegistrationInput {
-    pub username: String,
-    pub password: Secret<String>,
-    pub first_name: String,
-    pub last_name: String,
-    pub email: String,
-    pub bio: Option<String>,
+#[derive(serde::Deserialize)]
+pub struct UsersRegistrationInput{
+    pub credentials : UserCredentials,
+    pub info : UserInfoInput
 }
 
 #[derive(serde::Deserialize, validator::Validate)]
-pub struct Credentials {
+pub struct UserInfoInput{
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    #[serde(skip_serializing_if = "Option::None")]
+    pub bio : Option<String>
+}
+
+#[derive(serde::Deserialize, validator::Validate)]
+pub struct UserCredentials {
     pub username: String,
     pub password: Secret<String>,
 }

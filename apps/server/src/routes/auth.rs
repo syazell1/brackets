@@ -9,12 +9,11 @@ use validator::Validate;
 
 use crate::{
     app::{
-        create_user_from_credentials, create_users_info, get_user_by_id, validate_user_by_id,
-        validate_user_credentials,
+        create_user, get_user_by_id, validate_user_by_id, validate_user_credentials
     },
     configuration::JwtSettings,
     errors::AppAPIError,
-    models::{AuthInfo, Credentials, UsersRegistrationInput},
+    models::{AuthInfo, UserCredentials, UserInfo, UsersRegistrationInput},
     utils::{decode_jwt, filter_app_err, generate_jwt, AuthToken},
 };
 
@@ -39,28 +38,25 @@ async fn register_user(
     pool: web::Data<PgPool>,
     jwt_settings: web::Data<JwtSettings>,
 ) -> Result<HttpResponse, AppAPIError> {
-    let id = Uuid::new_v4();
-
-    register_input
-        .0
+    register_input.0.credentials 
         .validate()
         .map_err(AppAPIError::ValidationErrors)?;
 
-    let mut transaction = pool
+    register_input.0.info
+        .validate()
+        .map_err(AppAPIError::ValidationErrors)?;
+
+    let mut tx = pool
         .begin()
         .await
         .context("Failed to begin transaction.")
         .map_err(AppAPIError::UnexpectedError)?;
 
-    let user = create_user_from_credentials(&id, &register_input, &mut transaction)
+    let id = create_user(&register_input.0, &mut tx)
         .await
         .map_err(filter_app_err)?;
 
-    create_users_info(&id, &register_input, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
-
-    transaction
+    tx 
         .commit()
         .await
         .context("Failed to execute SQL Transaction.")
@@ -80,14 +76,17 @@ async fn register_user(
 
     Ok(HttpResponse::Ok().cookie(cookie).json(AuthInfo {
         access_token: at,
-        user,
+        user : UserInfo {
+            id,
+            username : register_input.credentials.username.to_string() 
+        },
     }))
 }
 
 #[post("/login")]
 #[tracing::instrument(name = "Logging User In", skip(credentials, pool, jwt_settings))]
 async fn login_user(
-    credentials: web::Json<Credentials>,
+    credentials: web::Json<UserCredentials>,
     pool: web::Data<PgPool>,
     jwt_settings: web::Data<JwtSettings>,
 ) -> Result<HttpResponse, AppAPIError> {
@@ -125,8 +124,6 @@ async fn refresh_user_token(
     pool: web::Data<PgPool>,
     jwt_settings: web::Data<JwtSettings>,
 ) -> Result<HttpResponse, AppAPIError> {
-    let req = req.clone();
-
     let token = req
         .cookie("rt")
         .context("Cookie not found.")
