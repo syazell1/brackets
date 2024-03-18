@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     errors::AppError,
-    models::{PageList, PostOwner, PostsData, PostsInput},
+    models::{PageFilters, PageList, PostOwner, PostsData, PostsInput},
     utils::uuid_parser,
 };
 
@@ -217,13 +217,21 @@ pub async fn get_users_posts_by_username(
 
 #[tracing::instrument(
     name = "Fetching All Posts from the database",
-    skip(current_page, page_size, pool)
+    skip(page_filters, pool)
 )]
 pub async fn get_all_posts(
-    current_page: u32,
-    page_size: u32,
+    page_filters: &PageFilters,
     pool: &PgPool,
 ) -> Result<PageList<Vec<PostsData>>, AppError> {
+    let current_page = page_filters.page.unwrap_or(1);
+    let page_size = page_filters.page_size.unwrap_or(10);
+    let search_filter = &page_filters.search;
+
+    let search = match search_filter {
+        Some(data) => format!("%{}%", data),
+        None => format!("%%")
+    };
+
     let page = page_size * (current_page - 1);
 
     let result = sqlx::query_as!(
@@ -235,10 +243,12 @@ pub async fn get_all_posts(
             (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64" 
             FROM posts p
             INNER JOIN users u ON u.id = p.owner_id
+            WHERE p.title LIKE $1 
             ORDER BY created_at DESC 
-            OFFSET $1
-            LIMIT $2
+            OFFSET $2
+            LIMIT $3
         "#,
+        search,
         page as i32,
         page_size as i32
     )
