@@ -29,7 +29,7 @@ pub struct UserInfo {
 }
 
 #[derive(serde::Serialize)]
-pub struct AuthInfo {
-    pub access_token: String,
-    pub user: UserInfo,
+pub struct AuthInfo<'a>{
+    pub access_token: &'a str,
+    pub id: Uuid,
 }
