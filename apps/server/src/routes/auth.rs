@@ -1,5 +1,5 @@
 use actix_web::{
-    cookie::{time::Duration, CookieBuilder},
+    cookie::{time::Duration, Cookie, CookieBuilder},
     get, post, web, HttpRequest, HttpResponse, Scope,
 };
 use anyhow::Context;
@@ -13,7 +13,7 @@ use crate::{
     },
     configuration::JwtSettings,
     errors::AppAPIError,
-    models::{AuthInfo, UserCredentials, UserInfo, UsersRegistrationInput},
+    models::{AuthInfo, UserCredentials, UsersRegistrationInput},
     utils::{decode_jwt, filter_app_err, generate_jwt, AuthToken},
 };
 
@@ -62,24 +62,11 @@ async fn register_user(
         .context("Failed to execute SQL Transaction.")
         .map_err(AppAPIError::UnexpectedError)?;
 
-    let (at, rt) = generate_jwt(&id.to_string(), &jwt_settings)
-        .context("Failed to gennerate JWT")
-        .map_err(AppAPIError::UnexpectedError)?;
+    let (at, rt)= get_auth_tokens(id, &jwt_settings)?;
 
-    let cookie = CookieBuilder::new("rt", rt)
-        .http_only(true)
-        .same_site(actix_web::cookie::SameSite::Lax)
-        .path("/")
-        .secure(true)
-        .max_age(Duration::days(7))
-        .finish();
-
-    Ok(HttpResponse::Ok().cookie(cookie).json(AuthInfo {
-        access_token: at,
-        user : UserInfo {
-            id,
-            username : register_input.credentials.username.to_string() 
-        },
+    Ok(HttpResponse::Ok().cookie(rt).json(AuthInfo {
+        access_token: &at,
+        id,
     }))
 }
 
@@ -99,21 +86,13 @@ async fn login_user(
         .await
         .map_err(filter_app_err)?;
 
-    let (at, rt) = generate_jwt(&user.id.to_string(), &jwt_settings)
-        .context("Failed to gennerate JWT")
-        .map_err(AppAPIError::UnexpectedError)?;
 
-    let cookie = CookieBuilder::new("rt", rt)
-        .http_only(true)
-        .same_site(actix_web::cookie::SameSite::Lax)
-        .path("/")
-        .secure(true)
-        .max_age(Duration::days(7))
-        .finish();
+    let (at, rt)= get_auth_tokens(user.id, &jwt_settings)?;
 
-    Ok(HttpResponse::Ok().cookie(cookie).json(AuthInfo {
-        access_token: at,
-        user,
+
+    Ok(HttpResponse::Ok().cookie(rt).json(AuthInfo {
+        access_token: &at,
+        id : user.id,
     }))
 }
 
@@ -207,4 +186,23 @@ async fn get_current_user(
         .map_err(filter_app_err)?;
 
     Ok(HttpResponse::Ok().json(user))
+}
+
+fn get_auth_tokens(
+    user_id : Uuid,
+    jwt_settings: &JwtSettings
+) -> Result<(String, Cookie<'static>), AppAPIError>{
+    let (at, rt) = generate_jwt(&user_id.to_string(), &jwt_settings)
+        .context("Failed to gennerate JWT")
+        .map_err(AppAPIError::UnexpectedError)?;
+
+    let cookie = CookieBuilder::new("rt", rt)
+        .http_only(true)
+        .same_site(actix_web::cookie::SameSite::Lax)
+        .path("/")
+        .secure(true)
+        .max_age(Duration::days(7))
+        .finish(); 
+
+    Ok((at, cookie))
 }
