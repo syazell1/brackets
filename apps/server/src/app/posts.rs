@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     errors::AppError,
-    models::{PageFilters, PageList, PostOwner, PostsData, PostsInput},
+    models::{PageFilters, PageList, PostsData, PostsInput, UserInfo},
     utils::uuid_parser,
 };
 
@@ -173,7 +173,7 @@ pub async fn get_users_posts_by_username(
         PostsData,
         r#"
             SELECT p.id, p.title, p.content, p.created_at,
-            (u.id, u.username) "owner!: PostOwner",
+            (u.id, u.username) "owner!: UserInfo",
             (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) "likes_count!: i64",
             (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64"
             FROM posts p
@@ -238,7 +238,7 @@ pub async fn get_all_posts(
         PostsData,
         r#"
             SELECT p.id, p.title, p.content, p.created_at,
-            (u.id, u.username) "owner!: PostOwner",
+            (u.id, u.username) "owner!: UserInfo",
             (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) "likes_count!: i64",
             (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64" 
             FROM posts p
@@ -284,7 +284,7 @@ pub async fn get_post_by_id(post_id: &Uuid, pool: &PgPool) -> Result<PostsData, 
         PostsData,
         r#"
             SELECT p.id, p.title, p.content, p.created_at,
-            (u.id, u.username) "owner!: PostOwner",
+            (u.id, u.username) "owner!: UserInfo",
             (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) "likes_count!: i64",
             (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64" 
             FROM posts p

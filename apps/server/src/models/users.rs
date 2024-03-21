@@ -22,7 +22,7 @@ pub struct UserCredentials {
     pub password: Secret<String>,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, sqlx::Type)]
 pub struct UserInfo {
     pub id: Uuid,
     pub username: String,

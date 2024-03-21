@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+use super::UserInfo;
+
 #[derive(serde::Deserialize, validator::Validate, Debug)]
 pub struct PostsInput {
     #[validate(length(min = 4))]
@@ -16,13 +18,7 @@ pub struct PostsData {
     pub created_at: DateTime<Utc>,
     pub likes_count: i64,
     pub comments_count: i64,
-    pub owner: PostOwner,
-}
-
-#[derive(serde::Serialize, sqlx::Type)]
-pub struct PostOwner {
-    pub id: Uuid,
-    pub username: String,
+    pub owner: UserInfo,
 }
 
 #[derive(serde::Deserialize)]
