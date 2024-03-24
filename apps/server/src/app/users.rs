@@ -3,22 +3,37 @@ use argon2::Argon2;
 use password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use secrecy::ExposeSecret;
 use sqlx::{Executor, PgPool, Postgres, Transaction};
+use chrono::Utc;
 use uuid::Uuid;
+use crate::{errors::AppError, models::UserInfoInput};
+use crate::models::{UserCredentials, UserInfo, UsersRegistrationInput};
 
-use crate::{
-    errors::AppError,
-    models::{Credentials, UserInfo, UsersRegistrationInput},
-};
+
+#[tracing::instrument(
+    name = "Creating User.",
+    skip(users_input, pool)
+)]
+pub async fn create_user(
+    users_input: &UsersRegistrationInput,
+    pool: &mut Transaction<'_, Postgres>,
+) -> Result<Uuid, AppError> {
+    let id = Uuid::new_v4();
+
+    create_user_from_credentials(&id, &users_input.credentials, pool).await?;
+    create_users_info(&id, &users_input.info, pool).await?;
+
+    Ok(id)
+}
 
 #[tracing::instrument(
     name = "Adding User Credentials from the Database.",
     skip(user_id, credentials, pool)
 )]
-pub async fn create_user_from_credentials(
+async fn create_user_from_credentials(
     user_id: &Uuid,
-    credentials: &UsersRegistrationInput,
-    pool: &mut Transaction<'_, Postgres>,
-) -> Result<UserInfo, AppError> {
+    credentials: &UserCredentials,
+    pool : &mut Transaction<'_, Postgres>
+) -> Result<(), AppError> {
     let params = argon2::Params::new(15000, 2, 1, None)
         .context("Failed to set Argon2 Params.")
         .map_err(AppError::UnexpectedError)?;
@@ -46,10 +61,7 @@ pub async fn create_user_from_credentials(
         .context("Failed to Insert user credentials from the database.")
         .map_err(AppError::UnexpectedError)?;
 
-    Ok(UserInfo {
-        id: user_id.to_owned(),
-        username: credentials.username.to_owned(),
-    })
+    Ok(())
 }
 
 #[tracing::instrument(
@@ -57,7 +69,7 @@ pub async fn create_user_from_credentials(
     skip(credentials, pool)
 )]
 pub async fn validate_user_credentials(
-    credentials: &Credentials,
+    credentials: &UserCredentials,
     pool: &PgPool,
 ) -> Result<UserInfo, AppError> {
     let row = sqlx::query!(
@@ -199,4 +211,68 @@ pub async fn get_user_by_id(user_id: &Uuid, pool: &PgPool) -> Result<UserInfo, A
             )))
         }
     }
+}
+
+async fn create_users_info(
+    user_id: &Uuid,
+    credentials: &UserInfoInput,
+    pool: &mut Transaction<'_, Postgres>,
+) -> Result<(), AppError> {
+    let id = Uuid::new_v4();
+    let date = Utc::now();
+
+    let query = sqlx::query!(
+        r#"
+            INSERT INTO users_info (id, first_name, last_name, email, user_id, created_at)
+            VALUES
+            ($1, $2, $3, $4, $5, $6)
+        "#,
+        id,
+        credentials.first_name,
+        credentials.last_name,
+        credentials.email,
+        user_id,
+        date
+    );
+
+    pool.execute(query)
+        .await
+        .context("Failed to insert users info from the database.")
+        .map_err(AppError::UnexpectedError)?;
+
+    Ok(())
+}
+
+#[tracing::instrument(
+    name = "Updating Users Information from the database",
+    skip(user_id, credentials, pool)
+)]
+pub async fn update_users_info(
+    user_id: &Uuid,
+    credentials: &UserInfoInput,
+    pool: &mut Transaction<'_, Postgres>,
+) -> Result<(), AppError> {
+    let date = Utc::now();
+
+    let query = sqlx::query!(
+        r#"
+                UPDATE users_info 
+                SET first_name = $1, last_name = $2, email = $3, 
+                bio = $4, updated_at = $5
+                WHERE user_id = $6
+        "#,
+        credentials.first_name,
+        credentials.last_name,
+        credentials.email,
+        credentials.bio,
+        date,
+        user_id
+    );
+
+    pool.execute(query)
+        .await
+        .context("Failed to update user information from the database.")
+        .map_err(AppError::UnexpectedError)?;
+
+    Ok(())
 }

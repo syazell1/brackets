@@ -5,8 +5,14 @@ import tailwindAnimate from 'tailwindcss-animate'
 module.exports = {
   darkMode: ["class"],
   content: [
-    "./src/**/*.{html,js}",
-    "../../packages/ui/src/**/*.{ts,tsx}"
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./features/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "../../packages/ui/src/**/*.{ts,tsx}",
+     // Path to Tremor module
+     '../../node_modules/@tremor/**/*.{js,ts,jsx,tsx}'
   ],
   theme: {
     container: {

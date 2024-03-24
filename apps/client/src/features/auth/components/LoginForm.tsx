@@ -1,18 +1,17 @@
 'use client'
 
-import Button from "client/components/ui/Button"
-import Input from "client/components/ui/Input"
-import styles from './LoginForm.module.css'
+import {Button} from "@repo/ui/components/button";
+import {Input} from "@repo/ui/components/input";
 import { useForm } from "react-hook-form"
 import { useLogin } from "../hooks/useLogin"
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginInputSchema } from "../schemas/auth.schema"
 import { LoginInput } from "../types/auth.types"
-import ErrorMessage from "client/components/ui/ErrorMessage"
+import ErrorMessage from "@repo/ui/components/ErrorMessage";
 import Link from "next/link"
 import { useContext, useEffect } from "react"
-import { authContextProvider } from "client/providers/AuthContext"
 import { useRouter } from "next/navigation"
+import { authContextProvider } from "@/providers/AuthContext";
 
 const LoginForm = () => {
   const { mutate, isPending } = useLogin();
@@ -33,29 +32,29 @@ const LoginForm = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit(submitLoginHandler)} className={styles["form-container"]}>
-      <div className={styles.title}>
-        <h2>Sign in to brackets</h2>
+    <form onSubmit={handleSubmit(submitLoginHandler)} className="flex flex-col gap-8">
+      <div>
+        <h2 className="font-bold text-center text-2xl">Sign in to brackets</h2>
       </div>
-      <div className={styles["form-input"]}>
+      <div className="flex flex-col gap-2">
         <Input {...register("username")} placeholder="Username" />
         {errors.username?.message && <ErrorMessage message={errors.username.message!} />}
       </div>
-      <div className={styles["form-input"]}>
+      <div className="flex flex-col gap-2">
         <Input {...register("password")} placeholder="Password" type="password" />
         {errors.password?.message && <ErrorMessage message={errors.password.message!} />}
-        <a className={styles["forgot-pass"]}
+        <a className="text-sm no-underline font-semibold text-[#444]"
           href="#">Forgot Password?</a>
       </div>
-      <div className={styles["form-control"]}>
+      <div className="mt-2">
         <Button
-          variant="primary"
+          className="w-full"
           type="submit">
           {isPending ? "Loading..." : "Sign In"}
         </Button>
       </div>
-      <div className={styles["sign-up"]}>
-        <p>Don't have an account? <Link href="/register">Sign up Now</Link>
+      <div className="font-semibold text-center">
+        <p>Don't have an account? <Link href="/register" className="text-blue-400">Sign up Now</Link>
         </p>
       </div>
     </form>

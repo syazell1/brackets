@@ -68,6 +68,6 @@ COPY --from=build /bin/server /bin/
 COPY configuration configuration
 # Expose the port that the application listens on.
 EXPOSE 8000
-
+ENV APP_ENVIRONMENT production
 # What the container should run when it is started.
 CMD ["/bin/server"]

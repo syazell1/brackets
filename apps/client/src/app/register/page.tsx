@@ -1,10 +1,9 @@
-import Card from "client/components/layouts/Card";
-import RegisterForm from "client/features/auth/components/RegisterForm";
-import styles from './page.module.css'
+import Card from '@/components/layouts/Card';
+import RegisterForm from '@/features/auth/components/RegisterForm';
 
 const RegisterPage = () => {
   return (
-    <div className={styles["register_page-container"]}>
+    <div className="max-w-xl mx-auto pt-16">
       <Card>
         <RegisterForm />
       </Card>
