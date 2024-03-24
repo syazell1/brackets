@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     errors::AppError,
-    models::{PageList, PostOwner, PostsData, PostsInput},
+    models::{PageFilters, PageList, PostsData, PostsInput, UserInfo},
     utils::uuid_parser,
 };
 
@@ -173,7 +173,7 @@ pub async fn get_users_posts_by_username(
         PostsData,
         r#"
             SELECT p.id, p.title, p.content, p.created_at,
-            (u.id, u.username) "owner!: PostOwner",
+            (u.id, u.username) "owner!: UserInfo",
             (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) "likes_count!: i64",
             (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64"
             FROM posts p
@@ -217,28 +217,38 @@ pub async fn get_users_posts_by_username(
 
 #[tracing::instrument(
     name = "Fetching All Posts from the database",
-    skip(current_page, page_size, pool)
+    skip(page_filters, pool)
 )]
 pub async fn get_all_posts(
-    current_page: u32,
-    page_size: u32,
+    page_filters: &PageFilters,
     pool: &PgPool,
 ) -> Result<PageList<Vec<PostsData>>, AppError> {
+    let current_page = page_filters.page.unwrap_or(1);
+    let page_size = page_filters.page_size.unwrap_or(10);
+    let search_filter = &page_filters.search;
+
+    let search = match search_filter {
+        Some(data) => format!("%{}%", data),
+        None => format!("%%")
+    };
+
     let page = page_size * (current_page - 1);
 
     let result = sqlx::query_as!(
         PostsData,
         r#"
             SELECT p.id, p.title, p.content, p.created_at,
-            (u.id, u.username) "owner!: PostOwner",
+            (u.id, u.username) "owner!: UserInfo",
             (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) "likes_count!: i64",
             (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64" 
             FROM posts p
             INNER JOIN users u ON u.id = p.owner_id
+            WHERE p.title LIKE $1 
             ORDER BY created_at DESC 
-            OFFSET $1
-            LIMIT $2
+            OFFSET $2
+            LIMIT $3
         "#,
+        search,
         page as i32,
         page_size as i32
     )
@@ -274,7 +284,7 @@ pub async fn get_post_by_id(post_id: &Uuid, pool: &PgPool) -> Result<PostsData, 
         PostsData,
         r#"
             SELECT p.id, p.title, p.content, p.created_at,
-            (u.id, u.username) "owner!: PostOwner",
+            (u.id, u.username) "owner!: UserInfo",
             (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) "likes_count!: i64",
             (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64" 
             FROM posts p

@@ -134,8 +134,7 @@ async fn fetch_all_posts(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, AppAPIError> {
     let result = get_all_posts(
-        page_filters.page.unwrap_or(1),
-        page_filters.page_size.unwrap_or(10),
+        &page_filters,
         &pool,
     )
     .await
