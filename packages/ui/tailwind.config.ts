@@ -1,6 +1,7 @@
 import {Config} from 'tailwindcss'
 import { fontFamily } from "tailwindcss/defaultTheme"
 import tailwindAnimate from 'tailwindcss-animate'
+import tailwindTypography from '@tailwindcss/typography'
 
 module.exports = {
   darkMode: ["class"],
@@ -82,5 +83,5 @@ module.exports = {
       },
     },
   },
-  plugins: [tailwindAnimate],
+  plugins: [tailwindAnimate, tailwindTypography],
 } satisfies Config;
