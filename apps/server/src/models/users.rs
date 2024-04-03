@@ -32,4 +32,5 @@ pub struct UserInfo {
 pub struct AuthInfo<'a>{
     pub access_token: &'a str,
     pub id: Uuid,
+    pub username : &'a str
 }
