@@ -6,7 +6,7 @@ import styles from './PostItem.module.css'
 import { Heart, MessageCircleMore } from "lucide-react";
 import PostItemMenu from "./PostItemMenu";
 import Link from "next/link";
-import Card from "@/components/layouts/Card";
+import { Card, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/card";
 
 type PostItemType = {
   data: PostsDetails
@@ -16,24 +16,24 @@ const PostItem = forwardRef<HTMLElement, PostItemType>(
   ({ data }, ref) => {
 
     const postItemContent = (
-      <div>
-        <div className={styles.contents}>
-          <div className={styles.title}>
-            <h2><Link href={`/posts/${data.id}`}>{data.title}</Link></h2>
-            <PostItemMenu data={data} />
+      <>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle className="hover:underline">
+            <Link href={`/posts/${data.id}`}>{data.title}</Link>
+          </CardTitle>
+          <PostItemMenu data={data} />
+        </CardHeader>
+        <CardFooter className="gap-8">
+          <div className={styles.btn}>
+            <Heart />
+            <p>{data.likes_count}</p>
           </div>
-          <div className={styles.controls}>
-            <div className={styles.btn}>
-              <Heart />
-              <p>{data.likes_count}</p>
-            </div>
-            <div className={styles.btn}>
-              <MessageCircleMore />
-              <p>{data.comments_count}</p>
-            </div>
+          <div className={styles.btn}>
+            <MessageCircleMore />
+            <p>{data.comments_count}</p>
           </div>
-        </div>
-      </div>
+        </CardFooter>
+      </>
     )
 
     const postItem = ref ? (

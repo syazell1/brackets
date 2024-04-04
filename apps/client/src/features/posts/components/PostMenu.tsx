@@ -1,22 +1,24 @@
 'use client'
 
 import { authContextProvider } from '@/providers/AuthContext';
-import styles from './PostMenu.module.css'
 import { useContext } from 'react';
-import LinkButton from '@/components/ui/LinkButton';
+import { Button } from '@repo/ui/components/button';
+import Link from 'next/link';
 
 const PostMenu = () => {
   const { isLoggedIn } = useContext(authContextProvider);
 
   return (
-    <header>
-      <ul className={styles.menu}>
+    <header className='mt-4'>
+      <ul className="flex gap-2 items-center">
         <li>All Posts</li>
         <li>Featured</li>
         <li>Rising</li>
         {isLoggedIn && (
-          <div className={styles["add-btn"]}>
-            <LinkButton href="/posts/create">Add Post</LinkButton>
+          <div className="ml-auto">
+            <Button asChild >
+              <Link href="/posts/create">Add New Post</Link>
+            </Button>
           </div>
         )}
       </ul>
