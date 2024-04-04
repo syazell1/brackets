@@ -2,20 +2,8 @@ import axios, { isAxiosError } from "axios"
 import { AddPostInput, PostsDetails, UpdatePostInput } from "../types/posts.types"
 import { PageList } from "@/types/page-lists.types";
 import { POSTS_URL } from "@/constants/server-config";
-import client from "@/libs/axios";
+import client from "@/lib/axios";
 import { ErrorResponse } from "@/types/error-response";
-
-export const getPosts = async (page: number) => {
-  const res = await axios.get<PageList<PostsDetails[]>>(`${POSTS_URL}?page=${page}`)
-
-  return res.data;
-}
-
-export const addPost = async (data: AddPostInput) => {
-  const res = await client.post(`${POSTS_URL}`, data);
-
-  return res.data;
-}
 
 export const updatePost = async (id: string, data: UpdatePostInput) => {
   const res = await client.patch(`${POSTS_URL}/${id}`, data);
