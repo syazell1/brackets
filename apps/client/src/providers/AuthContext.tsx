@@ -1,14 +1,13 @@
 'use client'
 
-import { AUTH_URL } from '@/constants/server-config'
-import { UsersInfo } from '@/features/users/types/users.types'
-import client from '@/libs/axios'
-import { AxiosError } from 'axios'
-import { ReactNode, createContext, useEffect, useState } from 'react'
+import {ReactNode, createContext, useState, useEffect} from 'react'
+import {AuthInfo} from "@/features/auth/types/auth.types";
+import axios from '@/lib/axios';
+import { AxiosError } from 'axios';
 
 type AuthProviderType = {
-  usersInfo: UsersInfo,
-  setDetails: (data: UsersInfo) => void,
+  usersInfo: AuthInfo,
+  setDetails: (data: AuthInfo) => void,
   isLoggedIn: boolean,
   setIsLoggedInHandler: (v: boolean) => void,
   isLoading: boolean,
@@ -20,34 +19,34 @@ export const authContextProvider = createContext<AuthProviderType>({} as AuthPro
 const AuthContext = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [usersInfo, setUsersInfo] = useState<UsersInfo>({} as UsersInfo);
+  const [usersInfo, setUsersInfo] = useState<AuthInfo>({} as AuthInfo);
 
-  // get current authenticated user 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await client.get<UsersInfo>(`${AUTH_URL}/current_user`)
+  // get current authenticated user
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const res = await axios.get<AuthInfo>(`/auth/current_user`)
 
-        if (res.status === 200) {
-          setUsersInfo(res.data)
-          setIsLoggedIn(true)
-        }
-        setIsLoading(false)
-      }
-      catch (ex) {
-        if (ex instanceof AxiosError) {
-          setUsersInfo({} as UsersInfo)
-          setIsLoggedIn(false)
-        }
-        setIsLoading(false)
-      }
-    }
+  //       if (res.status === 200) {
+  //         setUsersInfo(res.data)
+  //         setIsLoggedIn(true)
+  //       }
+  //       setIsLoading(false)
+  //     }
+  //     catch (ex) {
+  //       if (ex instanceof AxiosError) {
+  //         setUsersInfo({} as AuthInfo)
+  //         setIsLoggedIn(false)
+  //       }
+  //       setIsLoading(false)
+  //     }
+  //   }
 
-    fetchData();
-  }, [])
+  //   fetchData();
+  // }, [])
 
 
-  const setDetails = (data: UsersInfo) => {
+  const setDetails = (data: AuthInfo) => {
     setUsersInfo(data)
   }
 
