@@ -1,7 +1,7 @@
 import { AxiosError } from "axios"
 import { notFound } from "next/navigation"
 import styles from './PostDetailsPage.module.css'
-import client from "@/libs/axios"
+import client from "@/lib/axios"
 import { PostsDetails } from "@/features/posts/types/posts.types"
 import { POSTS_URL } from "@/constants/server-config"
 import PageContainer from "@/components/layouts/PageContainer"
