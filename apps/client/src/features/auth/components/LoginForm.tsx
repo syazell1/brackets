@@ -33,9 +33,6 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit(submitLoginHandler)} className="flex flex-col gap-8">
-      <div>
-        <h2 className="font-bold text-center text-2xl">Sign in to brackets</h2>
-      </div>
       <div className="flex flex-col gap-2">
         <Input {...register("username")} placeholder="Username" />
         {errors.username?.message && <ErrorMessage message={errors.username.message!} />}
