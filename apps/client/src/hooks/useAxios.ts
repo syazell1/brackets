@@ -10,6 +10,7 @@ export const useAxios = () => {
     useEffect(() => {
         const reqInterceptor = client.interceptors.request.use(
             config => {
+
                 if(!config.headers["Authorization"]) {
                     config.headers["Authorization"] = `Bearer ${usersInfo.access_token}`
                 }
@@ -22,17 +23,16 @@ export const useAxios = () => {
             res => res,
             async (err) => {
                 const prevRequest = err?.config;
-
-                if(err?.config?.status === 401 && !prevRequest?.sent) {
+                
+                if(err?.response?.status === 401 && !prevRequest?.sent) {
                     prevRequest.sent = true;
                     const res = await refresh();
-
                     if(res.status === 200) {
                         prevRequest.headers["Authorization"] = `Bearer ${res.data.access_token}`;
+                        setIsLoggedInHandler(true)
+                        setIsLoadingHandler(false)
+                        return client(prevRequest)
                     }
-
-                    setIsLoadingHandler(false)
-                    return client(prevRequest)
                 }
 
 
