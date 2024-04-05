@@ -9,7 +9,7 @@ import { Input } from "@repo/ui/components/input";
 import { useGetCurrentUser } from "@/features/auth/hooks/useGetCurrentUser";
 
 const NavBar = () => {
-  const {isPending, data} = useGetCurrentUser();
+  const {isPending, data, isLoggedIn} = useGetCurrentUser();
 
   return (
     <header className={styles.container}>
@@ -23,7 +23,7 @@ const NavBar = () => {
           <Input placeholder="Search" />
         </div>
         <div className={styles["menu-container"]}>
-          {isPending ? <p>Loading...</p> : data !== undefined ? (
+          {isPending ? <p>Loading...</p> : isLoggedIn && data !== undefined ? (
             <UserLoggedInMenu username={data?.username!} />
           ) : (
             <ul>
