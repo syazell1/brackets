@@ -1,12 +1,12 @@
 import { AxiosError } from "axios"
-import PageContainer from "client/components/layouts/PageContainer"
-import { POSTS_URL } from "client/constants/server-config"
-import CommentsList from "client/features/comments/components/CommentsList"
-import PostDetails from "client/features/posts/components/PostDetails"
-import { PostsDetails } from "client/features/posts/types/posts.types"
-import client from "client/libs/axios"
 import { notFound } from "next/navigation"
 import styles from './PostDetailsPage.module.css'
+import client from "@/lib/axios"
+import { PostsDetails } from "@/features/posts/types/posts.types"
+import { POSTS_URL } from "@/constants/server-config"
+import PageContainer from "@/components/layouts/PageContainer"
+import PostDetails from "@/features/posts/components/PostDetails"
+import CommentsList from "@/features/comments/components/CommentsList"
 
 type PostDetailsPageParamsType = {
   id: string

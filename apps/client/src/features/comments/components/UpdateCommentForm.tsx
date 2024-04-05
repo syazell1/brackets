@@ -4,13 +4,13 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AddCommentInputSchema } from '../schemas/comments.schema'
 import MDEditor from '@uiw/react-md-editor'
-import ErrorMessage from 'client/components/ui/ErrorMessage'
 import { useUpdateComment } from '../hooks/useUpdateComment'
-import Button from 'client/components/ui/Button'
 import { CommentsData, UpdateCommentInput } from '../types/comments.type'
 import styles from './UpdateCommentForm.module.css'
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { Button } from '@repo/ui/components/button'
+import ErrorMessage from '@repo/ui/components/ErrorMessage'
 
 type UpdateCommentFormType = {
   commentData: CommentsData,
@@ -67,7 +67,7 @@ const UpdateCommentForm = ({ commentData, setUpdateCommentHandler }: UpdateComme
           }) => {
             return (
               <>
-                <MDEditor height={200} value={value} onChange={onChange} ref={ref} placeholder="Add Comments to Post" />
+                <MDEditor height={200} value={value} onChange={onChange} ref={ref} />
                 {error?.message && <ErrorMessage message={error.message} />}
               </>
             )
@@ -75,7 +75,7 @@ const UpdateCommentForm = ({ commentData, setUpdateCommentHandler }: UpdateComme
         />
       </div>
       <div className={styles.controller}>
-        <Button type='submit' variant="primary">
+        <Button type='submit'>
           {isPending ? "Loading..." : "Submit"}
         </Button>
         <Button variant="secondary" onClick={setUpdateCommentHandler}>

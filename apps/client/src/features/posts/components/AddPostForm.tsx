@@ -1,14 +1,14 @@
 'use client'
 
-import MDEditor from "@uiw/react-md-editor";
-import Input from "client/components/ui/Input";
 import { Controller, useForm } from "react-hook-form";
 import { AddPostInput } from "../types/posts.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addPostInputSchema } from "../schemas/posts.schema";
 import { useAddPost } from "../hooks/useAddPost";
-import ErrorMessage from "client/components/ui/ErrorMessage";
-import Button from "client/components/ui/Button";
+import { Input } from "@repo/ui/components/input";
+import ErrorMessage from "@repo/ui/components/ErrorMessage";
+import MDEditor from "@uiw/react-md-editor";
+import { Button } from "@repo/ui/components/button";
 
 const AddPostForm = () => {
   const {
@@ -51,7 +51,7 @@ const AddPostForm = () => {
         </div>
       </div>
       <div>
-        <Button variant="primary" type="submit">Submit Post</Button>
+        <Button type="submit">Submit Post</Button>
       </div>
     </form>
   )

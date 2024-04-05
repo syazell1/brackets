@@ -9,18 +9,13 @@ use validator::Validate;
 
 use crate::{
     app::{
-        create_user, get_user_by_id, validate_user_by_id, validate_user_credentials
+        create_user, get_user_by_id, validate_user_credentials
     },
     configuration::JwtSettings,
     errors::AppAPIError,
     models::{AuthInfo, UserCredentials, UsersRegistrationInput},
     utils::{decode_jwt, filter_app_err, generate_jwt, AuthToken},
 };
-
-#[derive(serde::Serialize)]
-pub struct AuthResponse {
-    pub access_token: String,
-}
 
 pub fn auth_scope() -> Scope {
     web::scope("/auth")
@@ -67,6 +62,7 @@ async fn register_user(
     Ok(HttpResponse::Ok().cookie(rt).json(AuthInfo {
         access_token: &at,
         id,
+        username : &register_input.0.credentials.username
     }))
 }
 
@@ -93,6 +89,7 @@ async fn login_user(
     Ok(HttpResponse::Ok().cookie(rt).json(AuthInfo {
         access_token: &at,
         id : user.id,
+        username:  &credentials.username
     }))
 }
 
@@ -113,37 +110,20 @@ async fn refresh_user_token(
         .context("Invalid user id.")
         .map_err(AppAPIError::UnauthorizedError)?;
 
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to begin transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
-
-    validate_user_by_id(&id, &mut transaction)
+    let user = get_user_by_id(&id, &pool)
         .await
         .map_err(filter_app_err)?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to execute SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
 
-    let (at, rt) = generate_jwt(&id.to_string(), &jwt_settings)
-        .context("Failed to gennerate JWT")
-        .map_err(AppAPIError::UnexpectedError)?;
-
-    let cookie = CookieBuilder::new("rt", rt)
-        .http_only(true)
-        .same_site(actix_web::cookie::SameSite::Lax)
-        .path("/")
-        .secure(true)
-        .max_age(Duration::days(7))
-        .finish();
+    let (at, rt)= get_auth_tokens(id, &jwt_settings)?;
 
     Ok(HttpResponse::Ok()
-        .cookie(cookie)
-        .json(AuthResponse { access_token: at }))
+        .cookie(rt)
+        .json(AuthInfo {
+            access_token : &at,
+            id : user.id,
+            username : &user.username
+        }))
 }
 
 #[post("/logout")]
@@ -193,7 +173,7 @@ fn get_auth_tokens(
     jwt_settings: &JwtSettings
 ) -> Result<(String, Cookie<'static>), AppAPIError>{
     let (at, rt) = generate_jwt(&user_id.to_string(), &jwt_settings)
-        .context("Failed to gennerate JWT")
+        .context("Failed to generate JWT")
         .map_err(AppAPIError::UnexpectedError)?;
 
     let cookie = CookieBuilder::new("rt", rt)

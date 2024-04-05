@@ -6,9 +6,10 @@ import Link from "next/link";
 import { authContextProvider } from "@/providers/AuthContext";
 import UserLoggedInMenu from "@/features/users/components/UserLoggedInMenu";
 import { Input } from "@repo/ui/components/input";
+import { useGetCurrentUser } from "@/features/auth/hooks/useGetCurrentUser";
 
 const NavBar = () => {
-  const { isLoading, isLoggedIn, usersInfo } = useContext(authContextProvider);
+  const {isPending, data, isLoggedIn} = useGetCurrentUser();
 
   return (
     <header className={styles.container}>
@@ -22,8 +23,8 @@ const NavBar = () => {
           <Input placeholder="Search" />
         </div>
         <div className={styles["menu-container"]}>
-          {isLoading ? <p>Loading...</p> : isLoggedIn ? (
-            <UserLoggedInMenu username={usersInfo.username} />
+          {isPending ? <p>Loading...</p> : isLoggedIn && data !== undefined ? (
+            <UserLoggedInMenu username={data?.username!} />
           ) : (
             <ul>
               <li>

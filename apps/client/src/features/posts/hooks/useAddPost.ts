@@ -1,15 +1,18 @@
 import { useMutation } from "@tanstack/react-query"
 import { AddPostInput } from "../types/posts.types"
-import { addPost } from "../services/posts.api.services"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
+import {useAxios} from "@/hooks/useAxios";
 
 export const useAddPost = () => {
   const router = useRouter();
+  const client = useAxios();
 
   return useMutation({
-    mutationFn: (data: AddPostInput) => {
-      return addPost(data)
+    mutationFn: async (data: AddPostInput) => {
+      const res = await client.post(`/posts`, data);
+
+      return res.data;
     },
     onSuccess: () => {
       toast.success("Post added successfully!")

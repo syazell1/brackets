@@ -1,18 +1,22 @@
 import { useInfiniteQuery } from "@tanstack/react-query"
-import { getPostsComments } from "../services/comments.api.service";
+import { useAxios } from "@/hooks/useAxios";
+import { PageList } from "@/types/page-lists.types";
+import { CommentsData } from "../types/comments.type";
 
-export const useGetPostsComments = (id: string) => {
+export const useGetPostsComments = (postId: string) => {
+  const client = useAxios();
+
+
   return useInfiniteQuery({
-    queryKey: ["comments", { id }],
-    queryFn: ({ pageParam = 1 }) => {
-      return getPostsComments(id, pageParam)
+    queryKey: ["comments", { postId }],
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await client.get<PageList<CommentsData[]>>(`/posts/${postId}/comments?page=${pageParam}`);
+
+      return res.data;
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
-      const nextPage =
-        lastPage.data.length == 10 ? allPages.length + 1 : undefined;
-
-      return nextPage
+      return lastPage.data.length == 10 ? allPages.length + 1 : undefined;
     }
   }
   )
