@@ -1,10 +1,10 @@
-import Modal from 'client/components/ui/Modal'
 import styles from './DeleteCommentConfirmModal.module.css'
 import { useDeleteComment } from '../hooks/useDeleteComment'
 import { useEffect } from 'react'
-import Button from 'client/components/ui/Button'
 import { useQueryClient } from '@tanstack/react-query'
 import { CommentsData } from '../types/comments.type'
+import Modal from '@/components/ui/Modal'
+import { Button } from '@repo/ui/components/button'
 
 type DeleteCommentConfirmModalType = {
   commentData: CommentsData,
@@ -43,7 +43,7 @@ const DeleteCommentConfirmModal = ({ commentData, closeModalHandler }: DeleteCom
       </div>
 
       <div className={styles.controller}>
-        <Button variant='primary' onClick={submitDeleteHandler}>
+        <Button onClick={submitDeleteHandler}>
           {isPending ? "Loading..." : "Confirm"}
         </Button>
 

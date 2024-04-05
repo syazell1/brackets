@@ -1,11 +1,11 @@
 'use client'
-import Card from 'client/components/layouts/Card'
 import styles from './PostDetails.module.css'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { PostsDetails } from '../types/posts.types'
 import './Markdown.css'
 import PostItemMenu from './PostItemMenu'
+import {Card, CardContent, CardHeader, CardTitle} from '@repo/ui/components/card'
 
 type PostDetailsType = {
   data: PostsDetails
@@ -14,21 +14,17 @@ type PostDetailsType = {
 const PostDetails = ({ data }: PostDetailsType) => {
   return (
     <Card>
-      <div>
-        <header className={styles["header-container"]}>
-          <h2>{data.title}</h2>
-          <PostItemMenu data={data} />
-        </header>
-        <main>
-          <div className={`markdown-body ${styles["markdown-content"]}`} style={{ marginTop: "30px" }}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {data.content}
-            </ReactMarkdown>
-          </div>
-        </main>
-        <footer>
-        </footer>
-      </div>
+      <CardHeader className='flex flex-row items-center justify-between'>
+        <CardTitle>{data.title}</CardTitle>
+        <PostItemMenu data={data} />
+      </CardHeader>
+      <CardContent>
+        <div className={`markdown-body prose light ${styles["markdown-content"]} rounded-md`} style={{ marginTop: "30px" }}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {data.content}
+          </ReactMarkdown>
+        </div>
+      </CardContent>
     </Card>
   )
 }

@@ -6,7 +6,7 @@ import { useContext, useEffect } from "react";
 import CommentsItem from "./CommentsItem";
 import styles from './CommentsList.module.css'
 import AddCommentForm from "./AddCommentForm";
-import { authContextProvider } from "client/providers/AuthContext";
+import { authContextProvider } from "@/providers/AuthContext";
 
 type CommentsListType = {
   postId: string

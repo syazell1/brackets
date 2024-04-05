@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT p.id, p.title, p.content, p.created_at,\n            (u.id, u.username) \"owner!: PostOwner\",\n            (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) \"likes_count!: i64\",\n            (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) \"comments_count!: i64\"\n            FROM posts p\n            INNER JOIN users u ON u.id = p.owner_id\n            WHERE u.username = $1\n            ORDER BY created_at DESC \n            OFFSET $2\n            LIMIT $3\n        ",
+  "query": "\n            SELECT p.id, p.title, p.content, p.created_at,\n            (u.id, u.username) \"owner!: UserInfo\",\n            (SELECT COUNT(id) FROM like_posts lp WHERE lp.post_id = p.id) \"likes_count!: i64\",\n            (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) \"comments_count!: i64\"\n            FROM posts p\n            INNER JOIN users u ON u.id = p.owner_id\n            WHERE u.username = $1\n            ORDER BY created_at DESC \n            OFFSET $2\n            LIMIT $3\n        ",
   "describe": {
     "columns": [
       {
@@ -25,7 +25,7 @@
       },
       {
         "ordinal": 4,
-        "name": "owner!: PostOwner",
+        "name": "owner!: UserInfo",
         "type_info": "Record"
       },
       {
@@ -56,5 +56,5 @@
       null
     ]
   },
-  "hash": "b30d5981e8b8f291496bf0541d252a27f9d378a8acc75feb3e99628227fa56e5"
+  "hash": "45224f56449729e2b954c2b8a2ccbc9f9d5ff7012ae9d7c31e5c11c4fed79005"
 }

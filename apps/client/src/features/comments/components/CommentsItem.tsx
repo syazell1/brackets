@@ -1,13 +1,13 @@
 'use client'
 
-import Card from "client/components/layouts/Card"
 import { CommentsData } from "../types/comments.type"
 import { forwardRef, useContext, useState } from "react"
 import styles from './CommentsItem.module.css'
 import CommentItemMenu from "./CommentItemMenu"
-import { authContextProvider } from "client/providers/AuthContext"
 import UpdateCommentForm from "./UpdateCommentForm"
 import DeleteCommentConfirmModal from "./DeleteCommentConfirmModal"
+import { authContextProvider } from "@/providers/AuthContext"
+import Card from "@/components/layouts/Card"
 
 type CommentsItemType = {
   data: CommentsData

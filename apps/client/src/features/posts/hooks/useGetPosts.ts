@@ -1,18 +1,21 @@
-import { useInfiniteQuery } from "@tanstack/react-query"
-import { getPosts } from "../services/posts.api.services"
+import {useInfiniteQuery} from "@tanstack/react-query"
+import {PageList} from "@/types/page-lists.types";
+import {PostsDetails} from "@/features/posts/types/posts.types";
+import {useAxios} from "@/hooks/useAxios";
 
 export const useGetPosts = () => {
+  const client = useAxios();
+
   return useInfiniteQuery({
     queryKey: ["posts"],
-    queryFn: ({ pageParam = 1 }) => {
-      return getPosts(pageParam)
+    queryFn: async ({ pageParam = 1 }) => {
+      const res =  await client.get<PageList<PostsDetails[]>>(`/posts?page=${pageParam}`)
+
+      return res.data;
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
-      const nextPage =
-        lastPage.data.length == 10 ? allPages.length + 1 : undefined;
-
-      return nextPage
+      return lastPage.data.length == 10 ? allPages.length + 1 : undefined
     }
   }
   )

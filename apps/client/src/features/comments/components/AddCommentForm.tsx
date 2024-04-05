@@ -4,11 +4,11 @@ import { Controller, useForm } from "react-hook-form";
 import { AddCommentInput } from "../types/comments.type";
 import { useAddComment } from "../hooks/useAddComment";
 import MDEditor from "@uiw/react-md-editor";
-import ErrorMessage from "client/components/ui/ErrorMessage";
-import Button from "client/components/ui/Button";
 import styles from './AddCommentForm.module.css'
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import ErrorMessage from "@repo/ui/components/ErrorMessage";
+import { Button } from "@repo/ui/components/button";
 
 type AddCommentFormType = {
   postId: string
@@ -56,7 +56,7 @@ const AddCommentForm = ({ postId }: AddCommentFormType) => {
           }) => {
             return (
               <>
-                <MDEditor height={200} value={value} onChange={onChange} ref={ref} placeholder="Add Comments to Post" />
+                <MDEditor height={200} value={value} onChange={onChange} ref={ref}  />
                 {error?.message && <ErrorMessage message={error.message} />}
               </>
             )
@@ -64,7 +64,7 @@ const AddCommentForm = ({ postId }: AddCommentFormType) => {
         />
       </div>
       <div>
-        <Button variant="primary">
+        <Button>
           {isPending ? "Loading..." : "Submit"}
         </Button>
       </div>

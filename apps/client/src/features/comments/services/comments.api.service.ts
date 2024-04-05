@@ -1,19 +1,19 @@
-import { PageList } from 'client/types/page-lists.types'
-import client from '../../../libs/axios'
+import { PageList } from '@/types/page-lists.types';
+import client from '../../../lib/axios'
 import { AddCommentInput, CommentsData, UpdateCommentInput } from '../types/comments.type'
-import { COMMENTS_URL, POSTS_URL } from 'client/constants/server-config'
+import { COMMENTS_URL, POSTS_URL } from '@/constants/server-config';
 
-export const getPostsComments = async (postId: string, page: number) => {
-  const res = await client.get<PageList<CommentsData[]>>(`${POSTS_URL}/${postId}/comments?page=${page}`);
+// export const getPostsComments = async (postId: string, page: number) => {
+//   const res = await client.get<PageList<CommentsData[]>>(`${POSTS_URL}/${postId}/comments?page=${page}`);
 
-  return res.data;
-}
+//   return res.data;
+// }
 
-export const addComments = async (data: AddCommentInput) => {
-  const res = await client.post(`${COMMENTS_URL}`, data);
+// export const addComments = async (data: AddCommentInput) => {
+//   const res = await client.post(`${COMMENTS_URL}`, data);
 
-  return res.data;
-}
+//   return res.data;
+// }
 
 // TODO : add update comments service
 // add schema and validations

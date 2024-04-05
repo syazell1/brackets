@@ -22,9 +22,6 @@ const RegisterForm = () => {
 
   return (
     <form onSubmit={handleSubmit(submitRegisterHandler)} className="flex flex-col gap-8">
-      <div>
-        <h2 className="font-bold text-center text-2xl">Sign up to brackets</h2>
-      </div>
       <div className="flex flex-col gap-2">
         <Input {...register("username")} placeholder="Username" />
         {errors.username?.message && <ErrorMessage message={errors.username.message!} />}
