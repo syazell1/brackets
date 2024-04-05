@@ -26,9 +26,10 @@ export const useAxios = () => {
                 
                 if(err?.response?.status === 401 && !prevRequest?.sent) {
                     prevRequest.sent = true;
-                    const res = await refresh();
-                    if(res.status === 200) {
-                        prevRequest.headers["Authorization"] = `Bearer ${res.data.access_token}`;
+                    const token = await refresh();
+                    
+                    if(token !== undefined && token.length > 0) {
+                        prevRequest.headers["Authorization"] = `Bearer ${token}`;
                         setIsLoggedInHandler(true)
                         setIsLoadingHandler(false)
                         return client(prevRequest)
