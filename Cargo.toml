@@ -1,8 +1,0 @@
-[workspace]
-resolver = '2'
-members = [
-	'apps/server',
-]
-
-[profile.release]
-lto = true
