@@ -1,0 +1,18 @@
+.container {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.left {
+  flex-basis: 250px;
+}
+
+.main-container {
+  padding: .8rem;
+  flex-basis: 50rem;
+}
+
+.side {
+  flex-basis: 250px;
+}

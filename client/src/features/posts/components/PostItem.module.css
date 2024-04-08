@@ -1,0 +1,29 @@
+.contents {
+  display: flex;
+  gap: 2rem;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.title {
+  display: flex;
+  justify-content: space-between;
+}
+
+.title h2 {
+  cursor: pointer;
+}
+
+.title h2:hover {
+  color: var(--blue);
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn {
+  display: flex;
+  gap: .5rem;
+}
