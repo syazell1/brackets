@@ -1,0 +1,19 @@
+services:
+  # server:
+  #   build:
+  #     context: .
+  #     target: final
+  #   ports:
+  #     - 9000:8000
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  
+  db:
+    image: postgres
+ 
+  pgadmin:
+    image: dpage/pgadmin4
+
+volumes:
+  db-data:
