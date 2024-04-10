@@ -1,16 +1,12 @@
-import type { Config } from "tailwindcss"
-import {fontFamily} from 'tailwindcss/defaultTheme'
-import tailwindAnimate from 'tailwindcss-animate'
-import tailwindTypography from '@tailwindcss/typography'
-
-const config = {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   darkMode: ["class"],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
-	],
+  ],
   prefix: "",
   theme: {
     container: {
@@ -21,9 +17,6 @@ const config = {
       },
     },
     extend: {
-      fontFamily: {
-        sans : ["var(--font-sans)", ...fontFamily.sans]
-      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -80,7 +73,5 @@ const config = {
       },
     },
   },
-  plugins: [tailwindAnimate, tailwindTypography],
-} satisfies Config
-
-export default config
+  plugins: [require("tailwindcss-animate")],
+}
