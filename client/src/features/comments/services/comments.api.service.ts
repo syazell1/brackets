@@ -1,7 +1,6 @@
-import { PageList } from '@/types/page-lists.types';
-import client from '../../../lib/axios'
+import { COMMENTS_URL } from '@/constants/server-config';
+import client from '../../../../../client/src/lib/axios'
 import { AddCommentInput, CommentsData, UpdateCommentInput } from '../types/comments.type'
-import { COMMENTS_URL, POSTS_URL } from '@/constants/server-config';
 
 // export const getPostsComments = async (postId: string, page: number) => {
 //   const res = await client.get<PageList<CommentsData[]>>(`${POSTS_URL}/${postId}/comments?page=${page}`);

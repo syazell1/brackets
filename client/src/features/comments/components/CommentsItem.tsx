@@ -7,7 +7,7 @@ import CommentItemMenu from "./CommentItemMenu"
 import UpdateCommentForm from "./UpdateCommentForm"
 import DeleteCommentConfirmModal from "./DeleteCommentConfirmModal"
 import { authContextProvider } from "@/providers/AuthContext"
-import Card from "@/components/layouts/Card"
+import { Card } from "@/components/ui/card"
 
 type CommentsItemType = {
   data: CommentsData
