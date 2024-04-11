@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useInView } from "react-intersection-observer";
 import { useGetPosts } from "../hooks/useGetPosts";
 import PostItem from "./PostItem";
-import styles from './PostsList.module.css'
 
 const PostsLists = () => {
   const { ref, inView } = useInView()
@@ -27,7 +26,7 @@ const PostsLists = () => {
 
   return (
     <>
-      <ul className={styles.list}>
+      <ul className="space-y-4">
         {data?.pages.map(grp => {
           return grp.data.map((v, i) => {
             if (grp.data.length === i + 1) {
