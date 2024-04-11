@@ -1,19 +1,18 @@
 import { ReactNode } from "react";
 import NavBar from "../ui/NavBar";
 import SideBar from "../ui/SideBar";
-import styles from './PageContainer.module.css'
 
 const PageContainer = ({ children }: { children: ReactNode }) => {
   return (
     <>
       <NavBar />
-      <div className={styles.container}>
+      <div className="flex gap-2 justify-between">
         <SideBar />
-        <div className={styles.left}></div>
-        <main className={styles["main-container"]}>
+        <div className="basis-[250px]"></div>
+        <main className="basis-[50rem] p-4">
           {children}
         </main>
-        <div className={styles.side}></div>
+        <div className="basis-[250px]"></div>
       </div>
     </>
   )
