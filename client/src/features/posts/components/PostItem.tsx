@@ -2,11 +2,10 @@
 
 import { forwardRef } from "react";
 import { PostsDetails } from "../types/posts.types";
-import styles from './PostItem.module.css'
 import { Heart, MessageCircleMore } from "lucide-react";
-import PostItemMenu from "./PostItemMenu";
 import Link from "next/link";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import PostItemMenuUpdate from "./PostItemMenuUpdated";
 
 type PostItemType = {
   data: PostsDetails
@@ -21,14 +20,15 @@ const PostItem = forwardRef<HTMLElement, PostItemType>(
           <CardTitle className="hover:underline">
             <Link href={`/posts/${data.id}`}>{data.title}</Link>
           </CardTitle>
-          <PostItemMenu data={data} />
+          {/* <PostItemMenu data={data} /> */}
+          <PostItemMenuUpdate />
         </CardHeader>
         <CardFooter className="gap-8">
-          <div className={styles.btn}>
+          <div >
             <Heart />
             <p>{data.likes_count}</p>
           </div>
-          <div className={styles.btn}>
+          <div >
             <MessageCircleMore />
             <p>{data.comments_count}</p>
           </div>
