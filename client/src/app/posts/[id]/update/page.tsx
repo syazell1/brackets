@@ -1,11 +1,9 @@
 import { notFound } from 'next/navigation';
-import styles from './UpdatePostPage.module.css'
 import { AxiosError } from 'axios';
-import client from 'client/libs/axios';
-import { PostsDetails } from 'client/features/posts/types/posts.types';
-import { POSTS_URL } from 'client/constants/server-config';
-import UpdatePostForm from 'client/features/posts/components/UpdatePostForm';
-import PageContainer from 'client/components/layouts/PageContainer';
+import { client } from '@/lib/axios';
+import { PostsDetails } from '@/features/posts/types/posts.types';
+import PageContainer from '@/components/layouts/PageContainer';
+import UpdatePostForm from '@/features/posts/components/UpdatePostForm';
 
 type UpdatePostPageParamsType = {
   id: string
@@ -14,7 +12,7 @@ type UpdatePostPageParamsType = {
 const UpdatePostPage = async ({ params }: { params: UpdatePostPageParamsType }) => {
 
 
-  const res = await client.get<PostsDetails>(`${POSTS_URL}/${params.id}`)
+  const res = await client.get<PostsDetails>(`/posts/${params.id}`)
 
   if (res instanceof AxiosError && res.status === 404) {
     notFound();

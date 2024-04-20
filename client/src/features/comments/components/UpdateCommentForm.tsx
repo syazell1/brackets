@@ -56,7 +56,8 @@ const UpdateCommentForm = ({ commentData, setUpdateCommentHandler }: UpdateComme
 
   return (
     <form onSubmit={handleSubmit(updateCommentHandler)}
-      className={styles.container}>
+      className='flex flex-col gap-2 flex-1'
+    >
       <div data-color-mode="light">
         <Controller
           control={control}

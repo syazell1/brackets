@@ -5,10 +5,11 @@ import { AddPostInput } from "../types/posts.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addPostInputSchema } from "../schemas/posts.schema";
 import { useAddPost } from "../hooks/useAddPost";
-import { Input } from "@repo/ui/components/input";
-import ErrorMessage from "@repo/ui/components/ErrorMessage";
 import MDEditor from "@uiw/react-md-editor";
-import { Button } from "@repo/ui/components/button";
+import { Input } from "@/components/ui/input";
+import ErrorMessage from "@/components/ui/ErrorMessage";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 const AddPostForm = () => {
   const {
@@ -20,13 +21,14 @@ const AddPostForm = () => {
     resolver: zodResolver(addPostInputSchema)
   })
   const { mutate, isPending } = useAddPost();
+  const router = useRouter();
 
   const addPostSubmitHandler = (data: AddPostInput) => {
     mutate(data)
   }
 
   return (
-    <form onSubmit={handleSubmit(addPostSubmitHandler)}>
+    <form onSubmit={handleSubmit(addPostSubmitHandler)} className="space-y-4">
       <div>
         <Input {...register("title")} placeholder="Post Title" />
         {errors.title?.message && <ErrorMessage message={errors.title.message!} />}
@@ -50,8 +52,9 @@ const AddPostForm = () => {
           />
         </div>
       </div>
-      <div>
+      <div className="space-x-4">
         <Button type="submit">Submit Post</Button>
+        <Button type="button" variant="outline" onClick={() => router.push('/')}>Cancel</Button>
       </div>
     </form>
   )

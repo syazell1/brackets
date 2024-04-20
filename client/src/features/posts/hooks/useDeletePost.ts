@@ -1,15 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { deletePost } from "../services/posts.api.services"
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useAxios } from "@/hooks/useAxios";
 
 export const useDeletePost = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const client = useAxios();
 
   return useMutation({
-    mutationFn: (id: string) => {
-      return deletePost(id);
+    mutationFn: async (id: string) => {
+      const res = await client.patch(`/posts/${id}/delete`);
+
+      return res.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

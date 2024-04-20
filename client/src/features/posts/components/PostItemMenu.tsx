@@ -1,40 +1,67 @@
-// 'use client'
+import {
+  MoreHorizontal,
+  Trash2,
+  Pencil,
+  Copy
+} from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useContext, useState } from "react";
+import { authContextProvider } from "@/providers/AuthContext";
+import toast from "react-hot-toast";
 
-// import { MoreVertical } from "lucide-react";
-// import styles from './PostItemMenu.module.css'
-// import { PostsDetails } from "../types/posts.types";
-// import { useRouter } from "next/navigation";
-// import { useContext } from "react";
-// import { authContextProvider } from "@/providers/AuthContext";
+type PostItemMenuType = {
+  postId : string,
+  username : string,
+  setUpdateCommentHandler: () => void,
+  setDeleteCommentHandler: () => void
+}
+const PostItemMenu = (props : PostItemMenuType) => {
+  const { usersInfo, isLoggedIn } = useContext(authContextProvider);
 
-// type PostItemMenuType = {
-//   data: PostsDetails
-// }
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div className="cursor-pointer">
+            <MoreHorizontal />
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56">
+          <DropdownMenuLabel>Post Menu</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/posts/${props.postId}`)
 
-// const PostItemMenu = ({ data }: PostItemMenuType) => {
-//   const router = useRouter();
-//   const { usersInfo, isLoggedIn } = useContext(authContextProvider);
-
-//   return (
-//     <div className={styles.container}>
-//       <div className={styles["dropdown-btn"]}>
-//         <MoreVertical />
-//       </div>
-//       <div className={styles["dropdown-content"]}>
-//         <h4>Post Menu</h4>
-//         <hr />
-//         <ul className={styles["menu-container"]}>
-//           <li>Copy Link</li>
-//           {(usersInfo.username === data.owner.username && isLoggedIn) && (
-//             <>
-//               <li onClick={() => router.push(`/posts/${data.id}/update`)}>Update</li>
-//               <li>Delete</li>
-//             </>
-//           )}
-//         </ul>
-//       </div>
-//     </div>
-//   )
-// }
-
-// export default PostItemMenu;
+              toast.success("Link successfully copied")
+            }}>
+              <Copy className="mr-2 h-4 w-4" />
+              <span>Copy Link</span>
+            </DropdownMenuItem>
+            {(usersInfo.username === props.username && isLoggedIn) && (
+              <>
+                <DropdownMenuItem onClick={props.setUpdateCommentHandler}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  <span>Update Post</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={props.setDeleteCommentHandler} >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Delete Post</span>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  )
+}
+export default PostItemMenu; 
