@@ -226,10 +226,18 @@ pub async fn get_all_posts(
     let current_page = page_filters.page.unwrap_or(1);
     let page_size = page_filters.page_size.unwrap_or(10);
     let search_filter = &page_filters.search;
-
+    let is_delete_filter = &page_filters.is_deleted;
+    let mut bv = BitVec::from_elem(1, false);
+    
     let search = match search_filter {
         Some(data) => format!("%{}%", data),
         None => format!("%%")
+    };
+
+
+    match is_delete_filter{
+        Some(data) => bv.set(0, data.to_owned()),
+        None => bv.set(0, false)
     };
 
     let page = page_size * (current_page - 1);
@@ -243,12 +251,13 @@ pub async fn get_all_posts(
             (SELECT COUNT(id) FROM comments c WHERE c.post_id = p.id) "comments_count!: i64" 
             FROM posts p
             INNER JOIN users u ON u.id = p.owner_id
-            WHERE p.title LIKE $1 
+            WHERE p.title LIKE $1 AND is_deleted = $2  
             ORDER BY created_at DESC 
-            OFFSET $2
-            LIMIT $3
+            OFFSET $3
+            LIMIT $4
         "#,
         search,
+        bv,
         page as i32,
         page_size as i32
     )

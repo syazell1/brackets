@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { UpdatePostInput } from "../types/posts.types"
-import { updatePost } from "../services/posts.api.services"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
+import { useAxios } from "@/hooks/useAxios"
 
 type useUpdatePostType = {
   id: string,
@@ -12,16 +12,20 @@ type useUpdatePostType = {
 export const useUpdatePost = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const client = useAxios();
+
   return useMutation({
-    mutationFn: (updateInput: useUpdatePostType) => {
-      return updatePost(updateInput.id, updateInput.data)
+    mutationFn: async ({id, data}: useUpdatePostType) => {
+      const res = await client.patch(`/posts/${id}`, data);
+
+      return res.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["posts"]
       })
       toast.success("Post updated successfully")
-      router.refresh();
+      router.push('/');
     },
     onError: (e) => {
       toast.error(e.message)
