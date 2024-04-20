@@ -1,17 +1,15 @@
 'use client'
 
 import { Controller, useForm } from 'react-hook-form'
-import styles from './UpdatePostForm.module.css'
 import { PostsDetails, UpdatePostInput } from '../types/posts.types'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { addPostInputSchema } from '../schemas/posts.schema'
-import Input from 'client/components/ui/Input'
-import ErrorMessage from 'client/components/ui/ErrorMessage'
-import Button from 'client/components/ui/Button'
 import MDEditor from '@uiw/react-md-editor'
 import { useUpdatePost } from '../hooks/useUpdatePost'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import ErrorMessage from '@/components/ui/ErrorMessage'
 
 type UpdatePostFormType = {
   data: PostsDetails
@@ -23,7 +21,6 @@ const UpdatePostForm = ({ data }: UpdatePostFormType) => {
   const {
     mutate,
     isPending,
-    isSuccess
   } = useUpdatePost()
 
   const {
@@ -39,11 +36,6 @@ const UpdatePostForm = ({ data }: UpdatePostFormType) => {
     resolver: zodResolver(addPostInputSchema)
   })
 
-  useEffect(() => {
-    if (isSuccess) {
-      router.push(`/posts/${data.id}`)
-    }
-  }, [isSuccess])
 
   const handleUpdatePostHandler = (updatedPostData: UpdatePostInput) => {
     mutate({
@@ -54,7 +46,7 @@ const UpdatePostForm = ({ data }: UpdatePostFormType) => {
 
 
   return (
-    <form onSubmit={handleSubmit(handleUpdatePostHandler)} className={styles.container}>
+    <form onSubmit={handleSubmit(handleUpdatePostHandler)} className="space-y-4">
       <div>
         <Input {...register("title")} placeholder="Post Title" />
         {errors.title?.message && <ErrorMessage message={errors.title.message!} />}
@@ -78,12 +70,12 @@ const UpdatePostForm = ({ data }: UpdatePostFormType) => {
           />
         </div>
       </div>
-      <div className={styles.controller}>
-        <Button variant="primary" type="submit">
+      <div className="space-x-2">
+        <Button type="submit">
           {isPending ? "Loading..." : "Update Post"}
         </Button>
 
-        <Button variant="secondary" onClick={() => router.push(`/posts/${data.id}`)}  >
+        <Button variant="secondary" type='button' onClick={() => router.push(`/posts/${data.id}`)}  >
           Cancel
         </Button>
       </div>
