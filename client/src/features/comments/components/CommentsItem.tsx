@@ -2,12 +2,13 @@
 
 import { CommentsData } from "../types/comments.type"
 import { forwardRef, useContext, useState } from "react"
-import styles from './CommentsItem.module.css'
-import CommentItemMenu from "./CommentItemMenu"
 import UpdateCommentForm from "./UpdateCommentForm"
-import DeleteCommentConfirmModal from "./DeleteCommentConfirmModal"
 import { authContextProvider } from "@/providers/AuthContext"
 import { Card } from "@/components/ui/card"
+import remarkGfm from 'remark-gfm'
+import ReactMarkdown from 'react-markdown'
+import CommentItemMenu from "./CommentItemMenu"
+import DeleteCommentDialog from "./DeleteCommentDialog"
 
 type CommentsItemType = {
   data: CommentsData
@@ -21,45 +22,44 @@ const CommentsItem = forwardRef<HTMLElement, CommentsItemType>(
 
     const commentItemContent = (
       <>
-        {isDelete && <DeleteCommentConfirmModal commentData={data} closeModalHandler={() => setIsDelete(false)} />}
-        <div className={!isUpdate ? styles.container : ""}>
+        <DeleteCommentDialog commentId={data.id} postId={data.post_id} isOpen={isDelete} setIsOpen={setIsDelete}/>
+        <Card className="flex p-6">
           {isUpdate ? (
             <>
               <UpdateCommentForm
                 setUpdateCommentHandler={() => setIsUpdate(false)}
                 commentData={data} />
             </>
-          ) :
-            (
-              <>
-                <div>
-                  {data.content}
-                </div>
-                {(isLoggedIn && data.owner.username == usersInfo.username) &&
-                  <CommentItemMenu
-                    setUpdateCommentHandler={() => setIsUpdate(true)}
-                    setDeleteCommentHandler={() => setIsDelete(true)}
-                  />
-                }
-              </>
-            )}
-        </div>
+        ) : (
+        <>
+          <div className="flex-1">
+            <div className={`markdown-body prose light rounded-md`} >
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {data.content}
+              </ReactMarkdown>
+            </div>
+          </div>
+          {(isLoggedIn && data.owner.username == usersInfo.username) &&
+            <CommentItemMenu
+              setUpdateCommentHandler={() => setIsUpdate(true)}
+              setDeleteCommentHandler={() => setIsDelete(true)}
+            />
+          }
+        </>
+          )}
+      </Card>
       </>
     )
 
-    return ref ? (
-      <article ref={ref}>
-        <Card>
-          {commentItemContent}
-        </Card>
-      </article>
-    ) : (
-      <article>
-        <Card>
-          {commentItemContent}
-        </Card>
-      </article>
-    )
+return ref ? (
+  <article ref={ref}>
+    {commentItemContent}
+  </article>
+) : (
+  <article>
+    {commentItemContent}
+  </article>
+)
   }
 )
 
