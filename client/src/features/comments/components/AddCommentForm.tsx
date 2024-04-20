@@ -6,7 +6,6 @@ import { useAddComment } from "../hooks/useAddComment";
 import MDEditor from "@uiw/react-md-editor";
 import styles from './AddCommentForm.module.css'
 import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import ErrorMessage from "@/components/ui/ErrorMessage";
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +17,8 @@ type AddCommentFormType = {
 const AddCommentForm = ({ postId }: AddCommentFormType) => {
   const {
     handleSubmit,
-    control
+    control,
+    setValue
   } = useForm<AddCommentInput>({
     defaultValues: {
       post_id: postId
@@ -30,14 +30,10 @@ const AddCommentForm = ({ postId }: AddCommentFormType) => {
     isPending,
     isSuccess
   } = useAddComment(postId)
-
-  const queryClient = useQueryClient();
-
+  
   useEffect(() => {
-    if (isSuccess) {
-      queryClient.invalidateQueries({
-        queryKey: ["comments", { id: postId }]
-      })
+    if(isSuccess) {
+      setValue("content", "")  
     }
   }, [isSuccess])
 
