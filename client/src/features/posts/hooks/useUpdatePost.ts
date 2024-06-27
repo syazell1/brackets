@@ -3,6 +3,7 @@ import { UpdatePostInput } from "../types/posts.types"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 import { useAxios } from "@/hooks/useAxios"
+import { revalidateTag } from "next/cache"
 
 type useUpdatePostType = {
   id: string,
@@ -26,6 +27,7 @@ export const useUpdatePost = () => {
       })
       toast.success("Post updated successfully")
       router.push('/');
+      revalidateTag('posts')
     },
     onError: (e) => {
       toast.error(e.message)

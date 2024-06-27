@@ -6,6 +6,7 @@ export interface CommentsData {
   content: string,
   likes_count: number,
   created_at: string,
+  is_liked: boolean,
   post_id: string,
   owner: Owner
 }

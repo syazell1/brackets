@@ -1,31 +1,15 @@
-use server::startup::run;
 use server::configuration::get_config;
+use server::startup::Application;
 use server::telemetry::{get_sub, init_sub};
-use std::net::TcpListener;
-use sqlx::PgPool;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let sub = get_sub("server", "info");
+    let sub = get_sub("server", "info", std::io::stdout);
     init_sub(sub);
 
-    let config = get_config()
-        .expect("Failed to set configuration.");
+    let config = get_config().expect("Failed to set configuration.");
+    let app = Application::build(config).await?;
+    app.run_until_stopped().await?;
 
-    let connection = PgPool::connect_lazy_with(
-        config.database.with_db()
-    );
-
-    let address = TcpListener::bind(
-        format!("{}:{}", config.app.host, config.app.port)
-    )
-    .expect("Failed to bind address.");
-
-    run(
-        address,
-        connection,
-        config.app.client_url,
-        config.jwt
-    )?.await 
+    Ok(())
 }
-

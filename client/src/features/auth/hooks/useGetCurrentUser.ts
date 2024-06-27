@@ -2,15 +2,15 @@ import { useAxios } from "@/hooks/useAxios"
 import { useQuery } from "@tanstack/react-query"
 import { AuthInfo } from "../types/auth.types";
 import { useContext } from "react";
-import { authContextProvider } from "@/providers/AuthContext";
+import { authStore } from "@/providers/AuthStore";
 
 export const useGetCurrentUser = () => {
     const client = useAxios();
-    const {isLoggedIn} = useContext(authContextProvider)
+    const {isLoggedIn, authInfo} = authStore();
 
     const queryResult = useQuery({
         queryFn: async () => {
-            const res = await client.get<AuthInfo>('/auth/current_user');
+            const res = await client.get<AuthInfo>('/auth/current-user');
 
             return res.data
         },
@@ -22,6 +22,7 @@ export const useGetCurrentUser = () => {
 
     return {
         isLoggedIn,
+        authInfo,
         ...queryResult
     }
 }

@@ -1,18 +1,18 @@
-import {useContext, useEffect} from "react";
-import {authContextProvider} from "@/providers/AuthContext";
+import {useEffect} from "react";
 import {useRefreshToken} from "@/hooks/useRefreshToken";
 import {client} from "@/lib/axios";
+import { authStore } from "@/providers/AuthStore";
 
 export const useAxios = () => {
-    const {usersInfo, setIsLoggedInHandler, setIsLoadingHandler} = useContext(authContextProvider);
     const refresh = useRefreshToken();
+    const {authInfo, setIsLoggedIn, setIsLoading} = authStore();
 
     useEffect(() => {
         const reqInterceptor = client.interceptors.request.use(
             config => {
 
                 if(!config.headers["Authorization"]) {
-                    config.headers["Authorization"] = `Bearer ${usersInfo.access_token}`
+                    config.headers["Authorization"] = `Bearer ${authInfo.access_token}`
                 }
 
                 return config;
@@ -30,14 +30,16 @@ export const useAxios = () => {
                     
                     if(token !== undefined && token.length > 0) {
                         prevRequest.headers["Authorization"] = `Bearer ${token}`;
-                        setIsLoggedInHandler(true)
-                        setIsLoadingHandler(false)
+                        setIsLoggedIn(true)
+                        // setIsLoadingHandler(false)
+                        setIsLoading(false)
                         return client(prevRequest)
                     }
                 }
 
 
-                setIsLoadingHandler(false)
+                setIsLoggedIn(false)
+                setIsLoading(false)
                 return Promise.reject(err);
             }
         )
@@ -46,7 +48,7 @@ export const useAxios = () => {
             client.interceptors.request.eject(reqInterceptor);
             client.interceptors.response.eject(resInterceptor);
         }
-    }, [usersInfo, refresh]);
+    }, [authInfo, refresh, setIsLoggedIn]);
 
     return client;
 }

@@ -1,262 +1,162 @@
-use actix_web::{delete, get, patch, post, web, HttpResponse, Scope};
-use anyhow::{anyhow, Context};
-use sqlx::PgPool;
+use std::sync::Arc;
+
+// use actix_web::{delete, get, patch, post, web, HttpResponse, Scope};
+use anyhow::anyhow;
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    routing::{delete, patch, post},
+    Json, Router,
+};
 use validator::Validate;
 
 use crate::{
-    app::{
+    app_state::AppState,
+    errors::AppError,
+    models::{CommentInput, CommentLikeIds},
+    persistence::{
         add_comments_to_post, add_like_to_comment, check_comment_like, delete_comments_by_id,
-        fetch_posts_comments, get_liked_comments, remove_like_to_comment, update_comments_by_id,
-        verify_comments_by_id, verify_comments_by_user_id, verify_posts_by_id,
+        get_liked_comments, remove_like_to_comment, update_comments_by_id, verify_comments_by_id,
+        verify_comments_by_user_id, verify_posts_by_id,
     },
-    errors::AppAPIError,
-    models::{CommentInput, CommentLikeIds, PageFilters},
-    utils::{filter_app_err, uuid_parser, AuthToken},
+    utils::{uuid_parser, AuthToken},
 };
 
-pub fn comments_scope() -> Scope {
-    web::scope("/comments")
-        .service(add_comments)
-        .service(delete_comments)
-        .service(update_comments)
-        .service(like_comment)
-        .service(unlike_comment)
-        .service(fetch_comments_like_status)
+pub fn comment_routes() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/", post(add_comment))
+        .route("/:id", patch(update_comment))
+        .route("/:id", delete(delete_comment))
+        .route("/:id/like", post(like_comment))
+        .route("/:id/unlike", post(unlike_comment))
+        .route("/check-likes", post(fetch_comments_like_status))
 }
 
-pub fn posts_comments_scope() -> Scope {
-    web::scope("/posts").service(add_comments)
-}
-#[post("")]
-#[tracing::instrument(name = "Adding Comments", skip(auth_token, comment, pool))]
-pub async fn add_comments(
+// pub fn posts_comments_scope() -> Scope {
+//     web::scope("/posts").service(add_comments)
+// }
+// #[post("")]
+#[tracing::instrument(name = "Adding Comments", skip(auth_token, comment, app_state))]
+pub async fn add_comment(
     auth_token: AuthToken,
-    comment: web::Json<CommentInput>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    comment
-        .0
-        .validate()
-        .map_err(AppAPIError::ValidationErrors)?;
+    State(app_state): State<Arc<AppState>>,
+    Json(comment): Json<CommentInput>,
+) -> Result<Response, AppError> {
+    comment.validate()?;
+    let post_id = uuid_parser(&comment.post_id)?;
+    let mut tx = app_state.pool.begin().await?;
 
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to Initialize SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    verify_posts_by_id(post_id, &mut tx).await?;
 
-    verify_posts_by_id(&comment.post_id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    add_comments_to_post(&comment, &auth_token.id, &mut tx).await?;
 
-    add_comments_to_post(&comment.0, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    tx.commit().await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to execute SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
-
-    Ok(HttpResponse::Created().finish())
+    Ok((StatusCode::CREATED).into_response())
 }
 
-#[patch("/{id}")]
-#[tracing::instrument(
-    name = "Updating Comments",
-    skip(auth_token, comment_id, comment, pool)
-)]
-pub async fn update_comments(
+// #[patch("/{id}")]
+#[tracing::instrument(name = "Updating Comment", skip(auth_token, id, comment, app_state))]
+pub async fn update_comment(
     auth_token: AuthToken,
-    comment_id: web::Path<String>,
-    comment: web::Json<CommentInput>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    comment
-        .0
-        .validate()
-        .map_err(AppAPIError::ValidationErrors)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(comment): Json<CommentInput>,
+) -> Result<Response, AppError> {
+    comment.validate()?;
 
-    let comment_id = uuid_parser(&comment_id).map_err(filter_app_err)?;
+    let comment_id = uuid_parser(&id)?;
+    let post_id = uuid_parser(&comment.post_id)?;
 
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to Initialize SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    let mut tx = app_state.pool.begin().await?;
 
-    verify_posts_by_id(&comment.post_id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    verify_posts_by_id(post_id, &mut tx).await?;
 
-    verify_comments_by_user_id(&comment_id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    verify_comments_by_user_id(comment_id, auth_token.id, &mut tx).await?;
 
-    update_comments_by_id(&comment_id, &comment, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    update_comments_by_id(&comment_id, &comment, &auth_token.id, &mut tx).await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to execute SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    tx.commit().await?;
 
-    Ok(HttpResponse::NoContent().finish())
+    Ok((StatusCode::NO_CONTENT).into_response())
 }
 
-#[delete("/{id}")]
-#[tracing::instrument(name = "Deleting Comments", skip(auth_token, comment_id, pool))]
-pub async fn delete_comments(
+// #[delete("/{id}")]
+#[tracing::instrument(name = "Deleting Comments", skip(auth_token, comment_id, app_state))]
+pub async fn delete_comment(
     auth_token: AuthToken,
-    comment_id: web::Path<String>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let comment_id = uuid_parser(&comment_id).map_err(filter_app_err)?;
+    State(app_state): State<Arc<AppState>>,
+    comment_id: Path<String>,
+) -> Result<Response, AppError> {
+    let comment_id = uuid_parser(&comment_id)?;
 
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to Initialize SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    let mut tx = app_state.pool.begin().await?;
 
-    verify_comments_by_user_id(&comment_id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    verify_comments_by_user_id(comment_id, auth_token.id, &mut tx).await?;
 
-    delete_comments_by_id(&comment_id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    delete_comments_by_id(&comment_id, &auth_token.id, &mut tx).await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to execute SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    tx.commit().await?;
 
-    Ok(HttpResponse::NoContent().finish())
+    Ok((StatusCode::OK).into_response())
 }
 
-#[get("/{id}/comments")]
-#[tracing::instrument(name = "Deleting Comments", skip(post_id, page_filters, pool))]
-pub async fn get_posts_comments(
-    post_id: web::Path<String>,
-    page_filters: web::Query<PageFilters>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to Initialize SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
-
-    verify_posts_by_id(&post_id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
-
-    transaction
-        .commit()
-        .await
-        .context("Failed to execute SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
-
-    let result = fetch_posts_comments(
-        &post_id,
-        page_filters.page.unwrap_or(1),
-        page_filters.page_size.unwrap_or(10),
-        &pool,
-    )
-    .await
-    .map_err(filter_app_err)?;
-
-    Ok(HttpResponse::Ok().json(result))
-}
-
-#[post("/{id}/like")]
-#[tracing::instrument(name = "Liking a comment", skip(auth_token, id, pool))]
+// #[post("/{id}/like")]
+#[tracing::instrument(name = "Liking a comment", skip(auth_token, id, app_state))]
 async fn like_comment(
     auth_token: AuthToken,
-    id: web::Path<String>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to initialize SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let mut tx = app_state.pool.begin().await?;
 
-    verify_comments_by_id(&id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    verify_comments_by_id(&id, &mut tx).await?;
 
-    if (check_comment_like(&id, &auth_token.id, &mut transaction).await).is_ok() {
-        return Err(AppAPIError::BadRequestError(anyhow!(
+    if (check_comment_like(&id, &auth_token.id, &mut tx).await).is_ok() {
+        return Err(AppError::BadRequestError(anyhow!(
             "Comment was already liked"
         )));
     };
 
-    add_like_to_comment(&id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    add_like_to_comment(&id, &auth_token.id, &mut tx).await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to commit SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    tx.commit().await?;
 
-    Ok(HttpResponse::Ok().finish())
+    Ok((StatusCode::OK).into_response())
 }
 
-#[post("/{id}/unlike")]
-#[tracing::instrument(name = "Unlike a comment", skip(auth_token, id, pool))]
+// #[post("/{id}/unlike")]
+#[tracing::instrument(name = "Unlike a comment", skip(auth_token, id, app_state))]
 async fn unlike_comment(
     auth_token: AuthToken,
-    id: web::Path<String>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to initialize SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let mut tx = app_state.pool.begin().await?;
 
-    verify_comments_by_id(&id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    verify_comments_by_id(&id, &mut tx).await?;
 
-    check_comment_like(&id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    check_comment_like(&id, &auth_token.id, &mut tx).await?;
 
-    remove_like_to_comment(&id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    remove_like_to_comment(&id, &auth_token.id, &mut tx).await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to commit SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    tx.commit().await?;
 
-    Ok(HttpResponse::Ok().finish())
+    Ok((StatusCode::OK).into_response())
 }
 
-#[post("/check-likes")]
+// #[post("/check-likes")]
 #[tracing::instrument(
     name = "Fetching comments like status",
-    skip(comments, auth_token, pool)
+    skip(comments, auth_token, app_state)
 )]
 async fn fetch_comments_like_status(
-    comments: web::Json<CommentLikeIds>,
     auth_token: AuthToken,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let result = get_liked_comments(&comments, &auth_token.id, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    State(app_state): State<Arc<AppState>>,
+    Json(comments): Json<CommentLikeIds>,
+) -> Result<Response, AppError> {
+    let result = get_liked_comments(&comments, &auth_token.id, &app_state.pool).await?;
 
-    Ok(HttpResponse::Ok().json(result))
+    Ok((StatusCode::OK, Json(result)).into_response())
 }

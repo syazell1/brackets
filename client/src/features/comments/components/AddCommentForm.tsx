@@ -35,7 +35,7 @@ const AddCommentForm = ({ postId }: AddCommentFormType) => {
     if(isSuccess) {
       setValue("content", "")  
     }
-  }, [isSuccess])
+  }, [isSuccess, setValue])
 
   const addCommentHandler = (data: AddCommentInput) => {
     mutate(data)

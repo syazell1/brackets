@@ -10,5 +10,11 @@ export interface AuthInfo extends UserInfo {
   access_token : string
 }
 
+export interface AuthResponse {
+  access_token : string,
+  id: string,
+  username: string
+}
+
 export type LoginInput = z.infer<typeof loginInputSchema>;
 export type RegisterInput = z.infer<typeof registerInputSchema>

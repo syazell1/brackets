@@ -1,28 +1,33 @@
 import { useMutation } from "@tanstack/react-query"
-import {AuthInfo, LoginInput} from "../types/auth.types"
-import toast from "react-hot-toast"
+import {AuthResponse, LoginInput} from "../types/auth.types"
 import { useRouter } from 'next/navigation'
-import { useContext } from "react"
-import { authContextProvider } from "@/providers/AuthContext"
-import {useAxios} from "@/hooks/useAxios";
+import { authStore } from "@/providers/AuthStore";
+import axios from "@/lib/axios";
+import { useToast } from "@/components/ui/use-toast"
+import { cn } from "@/lib/utils";
 
 export const useLogin = () => {
   const router = useRouter();
-  const { setDetails, setIsLoggedInHandler } = useContext(authContextProvider);
-  const client = useAxios();
+  const {setAuthInfo, setIsLoggedIn} = authStore();
+  const {toast} = useToast();
 
   return useMutation({
     mutationFn: async (data: LoginInput) => {
-      const res = await client.post<AuthInfo>('/auth/login', data);
+      const res = await axios.post<AuthResponse>('/auth/login', data, {withCredentials : true});
 
       return res.data;
     },
     onSuccess: (data) => {
-      toast.success("Login success!, Welcome!");
+      toast({
+        title : "Login Successfully",
+        description: `Welcome ${data.username}!`,
+        className: cn(
+          'top-0 right-0 flex fixed md:max-w-[420px] md:top-4 md:right-4'
+        )
+      })
 
-      client.defaults.headers.common["Authorization"] = `Bearer ${data.access_token}`;
-      setDetails(data)
-      setIsLoggedInHandler(true)
+      setAuthInfo(data)
+      setIsLoggedIn(true)
 
       router.push('/')
     }

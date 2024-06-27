@@ -1,18 +1,27 @@
-use actix_web::{http::StatusCode, HttpResponse, ResponseError};
+use axum::{http::StatusCode, response::IntoResponse, Json};
 use validator::ValidationErrors;
 
-use crate::models::ErrorResponse;
+#[derive(serde::Serialize)]
+pub struct ErrorResponse<'a> {
+    pub error_type: &'a str,
+    pub status_code: u16,
+    pub message: &'a str,
+}
 
 #[derive(thiserror::Error)]
 pub enum AppError {
     #[error("{0}")]
-    NotFoundError(#[source] anyhow::Error),
+    NotFoundError(String),
     #[error("{0}")]
     BadRequestError(#[source] anyhow::Error),
     #[error("{0}")]
-    UnauthorizedError(#[source] anyhow::Error),
+    ValidationError(#[from] ValidationErrors),
     #[error("{0}")]
-    UnexpectedError(#[source] anyhow::Error),
+    UnauthorizedError(String),
+    #[error("{0}")]
+    DbError(#[from] sqlx::Error),
+    #[error("{0}")]
+    UnexpectedError(#[from] anyhow::Error),
 }
 
 impl std::fmt::Debug for AppError {
@@ -21,56 +30,63 @@ impl std::fmt::Debug for AppError {
     }
 }
 
-#[derive(thiserror::Error)]
-pub enum AppAPIError {
-    #[error("{0}")]
-    NotFoundError(#[source] anyhow::Error),
-    #[error("{0}")]
-    BadRequestError(#[source] anyhow::Error),
-    #[error("{0}")]
-    ValidationErrors(#[from] ValidationErrors),
-    #[error("{0}")]
-    UnauthorizedError(#[source] anyhow::Error),
-    #[error("{0}")]
-    UnexpectedError(#[source] anyhow::Error),
-}
-
-impl std::fmt::Debug for AppAPIError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{0}", self)
-    }
-}
-
-impl ResponseError for AppAPIError {
-    fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
+impl IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
         match self {
-            AppAPIError::NotFoundError(e) => HttpResponse::NotFound().json(ErrorResponse {
-                error_type: "NotFoundError".to_string(),
-                status_code: StatusCode::NOT_FOUND.as_u16(),
-                details: e.to_string(),
-            }),
-            AppAPIError::BadRequestError(e) => HttpResponse::BadRequest().json(ErrorResponse {
-                error_type: "BadRequestError".to_string(),
-                status_code: StatusCode::BAD_REQUEST.as_u16(),
-                details: e.to_string(),
-            }),
-            AppAPIError::ValidationErrors(_) => HttpResponse::BadRequest().json(ErrorResponse {
-                error_type: "ValidationErrors".to_string(),
-                status_code: StatusCode::UNAUTHORIZED.as_u16(),
-                details: "Invalid Filds".to_string(),
-            }),
-            AppAPIError::UnauthorizedError(e) => HttpResponse::Unauthorized().json(ErrorResponse {
-                error_type: "UnauthorizedError".to_string(),
-                status_code: StatusCode::UNAUTHORIZED.as_u16(),
-                details: e.to_string(),
-            }),
-            AppAPIError::UnexpectedError(e) => {
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    error_type: "UnexpectedError".to_string(),
+            AppError::NotFoundError(e) => (
+                StatusCode::NOT_FOUND,
+                Json(ErrorResponse {
+                    status_code: StatusCode::NOT_FOUND.as_u16(),
+                    message: &e,
+                    error_type: "NotFoundError",
+                }),
+            )
+                .into_response(),
+            AppError::BadRequestError(e) => (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse {
+                    status_code: StatusCode::BAD_REQUEST.as_u16(),
+                    message: &e.to_string(),
+                    error_type: "BadRequestError",
+                }),
+            )
+                .into_response(),
+            AppError::ValidationError(_) => (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse {
+                    status_code: StatusCode::BAD_REQUEST.as_u16(),
+                    message: "Validation Error",
+                    error_type: "ValidationError",
+                }),
+            )
+                .into_response(),
+            AppError::UnauthorizedError(e) => (
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                    status_code: StatusCode::UNAUTHORIZED.as_u16(),
+                    message: &e.to_string(),
+                    error_type: "UnauthorizedError",
+                }),
+            )
+                .into_response(),
+            AppError::DbError(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
                     status_code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                    details: e.root_cause().to_string(),
-                })
-            }
+                    message: &e.to_string(),
+                    error_type: "DbError",
+                }),
+            )
+                .into_response(),
+            AppError::UnexpectedError(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                    message: &e.to_string(),
+                    error_type: "UnexpectedError",
+                }),
+            )
+                .into_response(),
         }
     }
 }

@@ -6,26 +6,17 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { loginInputSchema } from "../schemas/auth.schema"
 import { LoginInput } from "../types/auth.types"
 import Link from "next/link"
-import { useContext, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { authContextProvider } from "@/providers/AuthContext";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import ErrorMessage from "@/components/ui/ErrorMessage"
+import { isAxiosError } from "axios"
+import { ErrorResponse } from "@/types/error-response"
 
 const LoginForm = () => {
-  const { mutate, isPending } = useLogin();
+  const { mutate, isPending, error} = useLogin();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(loginInputSchema)
   });
-  const { isLoggedIn } = useContext(authContextProvider)
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      router.push('/')
-    }
-  }, [isLoggedIn])
 
   const submitLoginHandler = (data: LoginInput) => {
     mutate(data)
@@ -49,9 +40,10 @@ const LoginForm = () => {
           type="submit">
           {isPending ? "Loading..." : "Sign In"}
         </Button>
+        {isAxiosError<ErrorResponse>(error) && <ErrorMessage message={error.response?.data.message!} />}
       </div>
       <div className="font-semibold text-center">
-        <p>Don't have an account? <Link href="/register" className="text-blue-400">Sign up Now</Link>
+        <p>Don&apos;t have an account? <Link href="/register" className="text-blue-400">Sign up Now</Link>
         </p>
       </div>
     </form>
