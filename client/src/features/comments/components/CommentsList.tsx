@@ -2,11 +2,11 @@
 
 import { useInView } from "react-intersection-observer";
 import { useGetPostsComments } from "../hooks/useGetComments";
-import { useContext, useEffect } from "react";
+import { useEffect } from "react";
 import CommentsItem from "./CommentsItem";
 import styles from './CommentsList.module.css'
 import AddCommentForm from "./AddCommentForm";
-import { authContextProvider } from "@/providers/AuthContext";
+import { authStore } from "@/providers/AuthStore";
 
 type CommentsListType = {
   postId: string
@@ -14,14 +14,14 @@ type CommentsListType = {
 
 const CommentsList = ({ postId }: CommentsListType) => {
   const { ref, inView } = useInView()
-  const { isLoggedIn } = useContext(authContextProvider)
+  const { isLoggedIn } = authStore();
 
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading
+    isPending 
   } = useGetPostsComments(postId)
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const CommentsList = ({ postId }: CommentsListType) => {
     }
   }, [hasNextPage, inView, fetchNextPage])
 
-  if (!data || isLoading) {
+  if (isPending) {
     return <p>Loading...</p>
   }
 

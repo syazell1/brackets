@@ -2,7 +2,7 @@ import styles from './SideBar.module.css'
 
 const SideBar = () => {
   return (
-    <div className={styles.container}>
+    <div className="fixed w-[250px] mt-4">
       <p>Test</p>
     </div>
   )

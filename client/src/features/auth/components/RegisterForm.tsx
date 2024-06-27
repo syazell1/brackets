@@ -6,9 +6,9 @@ import { registerInputSchema } from "../schemas/auth.schema"
 import { RegisterInput } from "../types/auth.types"
 import Link from "next/link"
 import { useRegister } from "../hooks/useRegister"
-import { Input } from '@repo/ui/components/input'
-import { Button } from '@repo/ui/components/button'
-import ErrorMessage from '@repo/ui/components/ErrorMessage'
+import { Input } from "@/components/ui/input"
+import ErrorMessage from "@/components/ui/ErrorMessage"
+import { Button } from "@/components/ui/button"
 
 const RegisterForm = () => {
   const { mutate, isPending } = useRegister();

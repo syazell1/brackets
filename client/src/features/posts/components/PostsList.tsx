@@ -1,18 +1,21 @@
 'use client'
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
-import { useGetPosts } from "../hooks/useGetPosts";
+import { useGetAllPosts} from "../hooks/useGetPosts";
 import PostItem from "./PostItem";
+import { useSearchParams } from "next/navigation";
 
 const PostsLists = () => {
+  const searchParam = useSearchParams();
   const { ref, inView } = useInView()
   const {
     data,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage
-  } = useGetPosts()
+    isFetchingNextPage,
+    isPending
+  } = useGetAllPosts(searchParam.get("q") ?? "")
 
   useEffect(() => {
     if (inView && hasNextPage) {
@@ -20,13 +23,18 @@ const PostsLists = () => {
     }
   }, [inView, fetchNextPage, hasNextPage])
 
+
+  if(isPending) {
+    return <p>Loading...</p>
+  }
+
   if (data?.pages[0].data.length === 0) {
     return <p>No Posts Available</p>
   }
 
   return (
     <>
-      <ul className="space-y-4">
+      <ul className="space-y-4 pb-4">
         {data?.pages.map(grp => {
           return grp.data.map((v, i) => {
             if (grp.data.length === i + 1) {

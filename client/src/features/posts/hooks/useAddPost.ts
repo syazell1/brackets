@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query"
 import { AddPostInput } from "../types/posts.types"
-import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 import {useAxios} from "@/hooks/useAxios";
 
@@ -15,12 +14,7 @@ export const useAddPost = () => {
       return res.data;
     },
     onSuccess: () => {
-      toast.success("Post added successfully!")
-
       router.push('/');
-    },
-    onError: () => {
-      toast.error("Error on adding post.")
     }
   })
 }

@@ -42,7 +42,7 @@ const UpdateCommentForm = ({ commentData, setUpdateCommentHandler }: UpdateComme
       })
       setUpdateCommentHandler();
     }
-  }, [isSuccess])
+  }, [isSuccess, commentData.post_id, setUpdateCommentHandler, queryClient])
 
   const updateCommentHandler = (data: UpdateCommentInput) => {
 

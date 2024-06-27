@@ -8,6 +8,7 @@ export interface PostsDetails {
   created_at: string,
   likes_count: number,
   comments_count: number,
+  is_liked : boolean
   owner: PostsOwner
 }
 
