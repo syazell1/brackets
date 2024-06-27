@@ -1,13 +1,13 @@
 import PageContainer from "@/components/layouts/PageContainer"
 import PostMenu from "@/features/posts/components/PostMenu"
-import PostsLists from "@/features/posts/components/PostsList"
+import Posts from "@/features/posts/components/PostsContainer"
 
 const IndexPage = () => {
   return (
     <PageContainer>
       <div className='space-y-6'>
         <PostMenu />
-        <PostsLists />
+        <Posts />
       </div>
     </PageContainer>
   )

@@ -25,11 +25,10 @@ const PostDetails = ({ data }: PostDetailsType) => {
         <CardHeader className='flex flex-row items-center justify-between'>
           {/* <CardTitle>{data.title}</CardTitle> */}
           {/* <PostItemMenu data={data} /> */}
-          <UserPostInfo username={data.owner.username} createdDate={data.created_at} />
+          <UserPostInfo usersInfo={data.owner} createdDate={data.created_at} />
           <PostItemMenu
             postId={data.id}
             username={data.owner.username} 
-            setUpdateCommentHandler={() => router.push(`/posts/${data.id}/update`)}
             setDeleteCommentHandler={() => setIsDelete(true)}
             />
         </CardHeader>

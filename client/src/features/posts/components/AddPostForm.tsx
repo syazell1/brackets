@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import ErrorMessage from "@/components/ui/ErrorMessage";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
+import { useEffect } from "react";
+import { ToastAction } from "@/components/ui/toast";
 
 const AddPostForm = () => {
   const {
@@ -20,8 +23,25 @@ const AddPostForm = () => {
   } = useForm<AddPostInput>({
     resolver: zodResolver(addPostInputSchema)
   })
-  const { mutate, isPending } = useAddPost();
+  const { mutate, isPending, isSuccess, isError, error} = useAddPost();
   const router = useRouter();
+  const {toast} = useToast();
+
+  useEffect(() => {
+    if(isSuccess) {
+      toast({
+        title: "Post was created Successfully",
+        description: "Members can now read your post!",
+        action: <ToastAction altText="View Post">View Post</ToastAction>,
+      });
+    }
+  }, [isSuccess])
+
+  useEffect(() => {
+    if(isError) {
+      console.log(error)
+    }
+  }, [isError, error])
 
   const addPostSubmitHandler = (data: AddPostInput) => {
     mutate(data)

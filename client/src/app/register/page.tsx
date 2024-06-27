@@ -1,5 +1,5 @@
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import RegisterForm from '@/features/auth/components/RegisterForm';
-import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/components/card';
 
 const RegisterPage = () => {
   return (

@@ -1,146 +1,153 @@
-use actix_web::{get, post, web, HttpResponse, Scope};
-use anyhow::{anyhow, Context};
-use sqlx::PgPool;
+use std::sync::Arc;
 
-use crate::{
-    app::{
-        follow_user, get_users_followers, get_users_followings, verify_user_by_id,
-        verify_user_follow_status,
-    },
-    errors::AppAPIError,
-    models::PageFilters,
-    utils::{filter_app_err, uuid_parser, AuthToken},
+use anyhow::anyhow;
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
 };
 
-pub fn follows_scope() -> Scope {
-    web::scope("/users")
-        .service(follow_user_by_id)
-        .service(unfollow_user_by_id)
-        .service(fetch_users_followers)
-        .service(fetch_users_followings)
+use crate::{
+    app_state::AppState, errors::AppError, models::PageFilters, persistence::{
+        follow_user, get_user_following_status, get_users_followers, get_users_followings, unfollow_user, verify_user_by_id, verify_user_by_id_tx, verify_user_follow_status
+    }, utils::{uuid_parser, AuthToken}
+};
+
+pub fn follow_routes() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/:id/follow", post(follow_user_by_id))
+        .route("/:id/unfollow", post(unfollow_user_by_id))
+        .route("/:id/followers", get(fetch_users_followers_by_id))
+        .route("/:id/followings", get(fetch_users_followings_by_id))
+        .route("/:id/status", get(fetch_user_follow_status))
 }
 
-#[post("/{id}/follow")]
-#[tracing::instrument(name = "Following a user", skip(id, auth_token, pool))]
+// #[post("/{id}/follow")]
+#[tracing::instrument(name = "Following a user", skip(id, auth_token, app_state))]
 async fn follow_user_by_id(
-    id: web::Path<String>,
     auth_token: AuthToken,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let followee_id = uuid_parser(&id).map_err(filter_app_err)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let followee_id = uuid_parser(&id)?;
 
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to initialize SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    if followee_id.eq(&auth_token.id) {
+        return Err(AppError::BadRequestError(anyhow::anyhow!(
+            "Follower Id cannot be the same as Followee Id."
+        )));
+    }
 
-    verify_user_by_id(&followee_id, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    let mut tx = app_state.pool.begin().await?;
 
-    if (verify_user_follow_status(&followee_id, &auth_token.id, &mut transaction).await).is_ok() {
-        return Err(AppAPIError::BadRequestError(anyhow!(
+    verify_user_by_id_tx(followee_id, &mut tx).await?;
+
+    if (verify_user_follow_status(followee_id, auth_token.id, &mut tx).await).is_ok() {
+        return Err(AppError::BadRequestError(anyhow!(
             "User already following this User with Id: {}",
             followee_id
         )));
     }
 
-    follow_user(&auth_token.id, &followee_id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    follow_user(auth_token.id, followee_id, &mut tx).await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to commit SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    tx.commit().await?;
 
-    Ok(HttpResponse::Ok().finish())
+    Ok((StatusCode::OK).into_response())
 }
 
-#[post("/{id}/unfollow")]
-#[tracing::instrument(name = "Unfollowing a user", skip(id, auth_token, pool))]
+// #[post("/{id}/unfollow")]
+#[tracing::instrument(name = "Unfollowing a user", skip(id, auth_token, app_state))]
 async fn unfollow_user_by_id(
-    id: web::Path<String>,
     auth_token: AuthToken,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let followee_id = uuid_parser(&id).map_err(filter_app_err)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let followee_id = uuid_parser(&id)?;
 
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to initialize SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    if followee_id.eq(&auth_token.id) {
+        return Err(AppError::BadRequestError(anyhow::anyhow!(
+            "Follower Id cannot be the same as Followee Id."
+        )));
+    }
 
-    verify_user_by_id(&followee_id, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    let mut tx = app_state.pool.begin().await?;
 
-    verify_user_follow_status(&followee_id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    verify_user_by_id_tx(followee_id, &mut tx).await?;
 
-    follow_user(&auth_token.id, &followee_id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    verify_user_follow_status(followee_id, auth_token.id, &mut tx).await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to commit SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    unfollow_user(auth_token.id, followee_id, &mut tx).await?;
 
-    Ok(HttpResponse::Ok().finish())
+    tx.commit().await?;
+
+    Ok((StatusCode::OK).into_response())
 }
 
-#[get("/{id}/followers")]
-#[tracing::instrument(name = "Fetching users followers", skip(id, page_filters, pool))]
-async fn fetch_users_followers(
-    id: web::Path<String>,
-    page_filters: web::Query<PageFilters>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let followee_id = uuid_parser(&id).map_err(filter_app_err)?;
+// #[get("/{id}/followers")]
+#[tracing::instrument(name = "Fetching users followers", skip(id, page_filters, app_state))]
+async fn fetch_users_followers_by_id(
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Query(page_filters): Query<PageFilters>,
+) -> Result<Response, AppError> {
+    let followee_id = uuid_parser(&id)?;
 
-    verify_user_by_id(&followee_id, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    verify_user_by_id(&followee_id, &app_state.pool).await?;
 
     let result = get_users_followers(
         &followee_id,
-        page_filters.page.unwrap_or_else(|| 1),
-        page_filters.page_size.unwrap_or_else(|| 10),
-        &pool,
+        page_filters.page.unwrap_or(1),
+        page_filters.page_size.unwrap_or(10),
+        &app_state.pool,
     )
-    .await
-    .map_err(filter_app_err)?;
+    .await?;
 
-    Ok(HttpResponse::Ok().json(result))
+    Ok((StatusCode::OK, Json(result)).into_response())
 }
 
-#[get("/{id}/followings")]
-#[tracing::instrument(name = "Fetching users followings", skip(id, page_filters, pool))]
-async fn fetch_users_followings(
-    id: web::Path<String>,
-    page_filters: web::Query<PageFilters>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let follower_id = uuid_parser(&id).map_err(filter_app_err)?;
+// #[get("/{id}/followings")]
+#[tracing::instrument(name = "Fetching users followings", skip(id, page_filters, app_state))]
+async fn fetch_users_followings_by_id(
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Query(page_filters): Query<PageFilters>,
+) -> Result<Response, AppError> {
+    let follower_id = uuid_parser(&id)?;
 
-    verify_user_by_id(&follower_id, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    verify_user_by_id(&follower_id, &app_state.pool).await?;
 
     let result = get_users_followings(
         &follower_id,
-        page_filters.page.unwrap_or_else(|| 1),
-        page_filters.page_size.unwrap_or_else(|| 10),
-        &pool,
+        page_filters.page.unwrap_or(1),
+        page_filters.page_size.unwrap_or(10),
+        &app_state.pool,
     )
-    .await
-    .map_err(filter_app_err)?;
+    .await?;
 
-    Ok(HttpResponse::Ok().json(result))
+    Ok((StatusCode::OK, Json(result)).into_response())
+}
+
+
+#[derive(serde::Serialize)]
+pub struct FollowingStatusResponse {
+    is_following : bool
+}
+#[tracing::instrument(name = "Fetching user follow status", skip(auth, id, app_state))]
+async fn fetch_user_follow_status(
+    auth : AuthToken,
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<Response, AppError>{
+    let id = uuid_parser(&id)?;
+
+    let is_following = get_user_following_status(id, auth.id, &app_state.pool).await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(FollowingStatusResponse {
+            is_following
+        })
+    ).into_response())
 }

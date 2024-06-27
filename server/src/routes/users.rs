@@ -1,36 +1,51 @@
-use actix_web::{get, web, HttpResponse, Scope};
-use sqlx::PgPool;
+use std::sync::Arc;
+
+use axum::{
+    extract::{Path, Query, State},
+    response::{IntoResponse, Response},
+    routing::get,
+    Json, Router,
+};
+use reqwest::StatusCode;
 
 use crate::{
-    app::{get_users_posts_by_username, verify_user_by_username},
-    errors::AppAPIError,
-    models::PageFilters,
-    utils::filter_app_err,
+    app_state::AppState,
+    errors::AppError,
+    models::UsersPostFilters,
+    persistence::{get_user_details_by_username, get_users_posts_by_username, verify_user_by_username},
 };
 
-pub fn users_scope() -> Scope {
-    web::scope("/users").service(fetch_posts_by_username)
+pub fn users_routes() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/:username/posts", get(fetch_posts_by_username))
+        .route("/:username/details", get(fetch_user_details_by_username))
 }
 
-#[get("/{username}/posts")]
-#[tracing::instrument(name = "Fetching Posts", skip(username, page_filters, pool))]
+// #[get("/{username}/posts")]
+#[tracing::instrument(name = "Fetching Posts", skip(username, page_filters, app_state))]
 async fn fetch_posts_by_username(
-    username: web::Path<String>,
-    page_filters: web::Query<PageFilters>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    verify_user_by_username(&username, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(username): Path<String>,
+    Query(page_filters): Query<UsersPostFilters>,
+) -> Result<Response, AppError> {
+    verify_user_by_username(&username, &app_state.pool).await?;
 
     let result = get_users_posts_by_username(
         &username,
-        page_filters.page.unwrap_or(1),
-        page_filters.page_size.unwrap_or(10),
-        &pool,
+        &page_filters,
+        &app_state.pool,
     )
-    .await
-    .map_err(filter_app_err)?;
+    .await?;
 
-    Ok(HttpResponse::Ok().json(result))
+    Ok((StatusCode::OK, Json(result)).into_response())
+}
+
+#[tracing::instrument(name = "Fetching User Details", skip(username, app_state))]
+async fn fetch_user_details_by_username(
+    State(app_state): State<Arc<AppState>>,
+    Path(username): Path<String>,
+) -> Result<Response, AppError> {
+    let user = get_user_details_by_username(&username, &app_state.pool).await?;
+
+    Ok((StatusCode::OK, Json(user)).into_response())
 }

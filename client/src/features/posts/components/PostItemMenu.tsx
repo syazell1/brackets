@@ -13,18 +13,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useContext, useState } from "react";
-import { authContextProvider } from "@/providers/AuthContext";
 import toast from "react-hot-toast";
+import { authStore } from "@/providers/AuthStore";
+import Link from "next/link";
 
 type PostItemMenuType = {
   postId : string,
   username : string,
-  setUpdateCommentHandler: () => void,
   setDeleteCommentHandler: () => void
 }
 const PostItemMenu = (props : PostItemMenuType) => {
-  const { usersInfo, isLoggedIn } = useContext(authContextProvider);
+  const {authInfo, isLoggedIn} = authStore();
 
   return (
     <>
@@ -46,11 +45,13 @@ const PostItemMenu = (props : PostItemMenuType) => {
               <Copy className="mr-2 h-4 w-4" />
               <span>Copy Link</span>
             </DropdownMenuItem>
-            {(usersInfo.username === props.username && isLoggedIn) && (
+            {(authInfo.username === props.username && isLoggedIn) && (
               <>
-                <DropdownMenuItem onClick={props.setUpdateCommentHandler}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  <span>Update Post</span>
+                <DropdownMenuItem asChild>
+                    <Link href={`/posts/${props.postId}/update`}>
+                      <span><Pencil className="mr-2 h-4 w-4" /></span>
+                      Update Post
+                    </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={props.setDeleteCommentHandler} >
                   <Trash2 className="mr-2 h-4 w-4" />

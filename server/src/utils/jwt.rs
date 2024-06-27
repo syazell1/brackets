@@ -1,34 +1,38 @@
-use std::future::{ready, Ready};
+use std::sync::Arc;
 
-use actix_web::{http::header::Header, web, FromRequest};
-use actix_web_httpauth::headers::authorization;
-use anyhow::Context;
+use axum::{
+    async_trait,
+    extract::{FromRef, FromRequestParts},
+    http::request::Parts,
+    RequestPartsExt,
+};
+use axum_extra::{
+    headers::{authorization::Bearer, Authorization},
+    TypedHeader,
+};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header as JwtHeader, TokenData};
 use uuid::Uuid;
 
-use crate::{
-    configuration::JwtSettings,
-    errors::{AppAPIError, AppError},
-};
+use crate::{app_state::AppState, configuration::JwtSettings, errors::AppError};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct Claims {
     pub iss: String,
     pub aud: String,
     pub exp: usize,
-    pub id: String,
+    pub id: Uuid,
 }
 
 fn generate_token(
-    id: &str,
+    id: Uuid,
     jwt_settings: &JwtSettings,
     is_refresh_token: bool,
 ) -> Result<String, jsonwebtoken::errors::Error> {
     let claims = Claims {
         iss: jwt_settings.issuer.to_string(),
         aud: jwt_settings.audience.to_string(),
-        id: id.to_string(),
+        id,
         exp: if is_refresh_token {
             (Utc::now() + Duration::try_days(7).unwrap()).timestamp() as usize
         } else {
@@ -43,24 +47,23 @@ fn generate_token(
     )
 }
 
-pub fn decode_jwt(token: &str, jwt_settings: &JwtSettings) -> Result<TokenData<Claims>, AppError> {
+pub fn decode_jwt(
+    token: &str,
+    jwt_settings: &JwtSettings,
+) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
     let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256);
     validation.set_issuer(&[jwt_settings.issuer.to_string()]);
     validation.set_audience(&[jwt_settings.audience.to_string()]);
 
-    let token_data = decode::<Claims>(
+    decode::<Claims>(
         token,
         &DecodingKey::from_secret(jwt_settings.secret_key.as_bytes()),
         &validation,
     )
-    .context("Failed to decode jwt token")
-    .map_err(AppError::UnauthorizedError)?;
-
-    Ok(token_data)
 }
 
 pub fn generate_jwt(
-    id: &str,
+    id: Uuid,
     jwt_settings: &JwtSettings,
 ) -> Result<(String, String), jsonwebtoken::errors::Error> {
     let at = generate_token(id, jwt_settings, false)?;
@@ -74,50 +77,27 @@ pub struct AuthToken {
     pub id: Uuid,
 }
 
-impl FromRequest for AuthToken {
-    type Error = AppAPIError;
-    type Future = Ready<Result<Self, AppAPIError>>;
+#[async_trait]
+impl<S> FromRequestParts<S> for AuthToken
+where
+    S: Send + Sync,
+    Arc<AppState>: FromRef<S>,
+{
+    type Rejection = AppError;
 
-    fn from_request(
-        req: &actix_web::HttpRequest,
-        _payload: &mut actix_web::dev::Payload,
-    ) -> Self::Future {
-        let req = req.clone();
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let TypedHeader(Authorization(bearer)) = parts
+            .extract::<TypedHeader<Authorization<Bearer>>>()
+            .await
+            .map_err(|_| AppError::UnauthorizedError("Token was not found.".into()))?;
 
-        let bearer = match authorization::Authorization::<authorization::Bearer>::parse(&req) {
-            Ok(data) => data.into_scheme(),
-            Err(_) => {
-                return ready(Err(AppAPIError::UnauthorizedError(anyhow::anyhow!(
-                    "No Token Found"
-                ))))
-            }
-        };
+        let app_state = Arc::from_ref(state);
 
-        let jwt_settings = match req.app_data::<web::Data<JwtSettings>>() {
-            Some(data) => data,
-            None => {
-                return ready(Err(AppAPIError::UnexpectedError(anyhow::anyhow!(
-                    "Unable to fetch jwt settings."
-                ))))
-            }
-        };
+        let token_data = decode_jwt(bearer.token(), &app_state.jwt_settings)
+            .map_err(|e| AppError::UnauthorizedError(e.to_string()))?;
 
-        match decode_jwt(bearer.token(), jwt_settings) {
-            Ok(data) => {
-                let id = match Uuid::try_parse(&data.claims.id) {
-                    Ok(data) => data,
-                    Err(_) => {
-                        return ready(Err(AppAPIError::UnauthorizedError(anyhow::anyhow!(
-                            "Invalid Id."
-                        ))));
-                    }
-                };
-
-                ready(Ok(AuthToken { id }))
-            }
-            Err(_) => ready(Err(AppAPIError::UnauthorizedError(anyhow::anyhow!(
-                "Invalid Access Token."
-            )))),
-        }
+        Ok(Self {
+            id: token_data.claims.id,
+        })
     }
 }

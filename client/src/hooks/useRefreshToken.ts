@@ -1,27 +1,22 @@
-import {useContext} from "react";
-import {authContextProvider} from "@/providers/AuthContext";
-import axios, {client} from "@/lib/axios";
-import {AuthInfo} from "@/features/auth/types/auth.types";
-import { isAxiosError } from "axios";
+import axios from "@/lib/axios";
+import {AuthInfo, AuthResponse} from "@/features/auth/types/auth.types";
+import { authStore } from "@/providers/AuthStore";
 
 export const useRefreshToken = () => {
-    const {setDetails} = useContext(authContextProvider)
-
+    const {setAuthInfo} = authStore();
     const refresh = async () => {
         try
         {
-            const res = await axios.get<AuthInfo>('/auth/refresh', {
+            const res = await axios.get<AuthResponse>('/auth/refresh', {
                 withCredentials: true
             });
 
-            setDetails(res.data);
+            setAuthInfo(res.data);
 
             return res.data.access_token
         }
         catch(err) {
-            if(isAxiosError(err) && err.response?.status === 401) {
-                return "";
-            }
+            return "";
         }
     }
 

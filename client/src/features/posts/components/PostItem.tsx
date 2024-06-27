@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import DeletePostDialog from "./DeletePostDialog";
 import PostItemMenu from "./PostItemMenu";
 import UserPostInfo from "@/features/users/components/UserPostInfo";
+import PostLikesButton from "@/features/likes/components/PostLikesButton";
 
 type PostItemType = {
   data: PostsDetails
@@ -24,13 +25,12 @@ const PostItem = forwardRef<HTMLElement, PostItemType>(
         <Card>
         <DeletePostDialog isOpen={isDelete} setIsOpen={setIsDelete} postId={data.id} />
         <CardHeader className="flex-row items-center justify-between">
-          <UserPostInfo username={data.owner.username} createdDate={data.created_at} />
+          <UserPostInfo usersInfo={data.owner} createdDate={data.created_at} />
           {/* <PostItemMenu data={data} /> */}
           <PostItemMenu 
             postId={data.id}
             username={data.owner.username} 
             setDeleteCommentHandler={() => setIsDelete(true)}
-            setUpdateCommentHandler={() => router.push(`/posts/${data.id}/update`)}
             />
         </CardHeader>
         <CardContent>
@@ -39,10 +39,7 @@ const PostItem = forwardRef<HTMLElement, PostItemType>(
           </CardTitle>
         </CardContent>
         <CardFooter className="flex gap-10">
-          <div className="flex gap-2">
-            <Heart />
-            <p>{data.likes_count}</p>
-          </div>
+          <PostLikesButton postId={data.id} likesCount={data.likes_count} isLiked={data.is_liked}  />
           <div className="flex gap-2">
             <MessageCircleMore />
             <p>{data.comments_count}</p>
