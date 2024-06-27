@@ -1,188 +1,179 @@
-use actix_web::{
-    cookie::{time::Duration, Cookie, CookieBuilder},
-    get, post, web, HttpRequest, HttpResponse, Scope,
-};
+use std::sync::Arc;
+
 use anyhow::Context;
-use sqlx::PgPool;
-use uuid::Uuid;
-use validator::Validate;
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::{AppendHeaders, IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
+};
+use axum_extra::{headers, TypedHeader};
+use cookie::{time::Duration, Cookie, CookieBuilder};
+use reqwest::header::SET_COOKIE;
+use serde::Deserialize;
+use uuid::{NoContext, Timestamp, Uuid};
 
 use crate::{
-    app::{
-        create_user, get_user_by_id, validate_user_credentials
-    },
-    configuration::JwtSettings,
-    errors::AppAPIError,
-    models::{AuthInfo, UserCredentials, UsersRegistrationInput},
-    utils::{decode_jwt, filter_app_err, generate_jwt, AuthToken},
+    app_state::AppState, configuration::JwtSettings, errors::AppError, models::{CredentialsFormData, RegisterFormData}, persistence::{create_user_from_credentials, create_users_info, get_user_by_id, validate_user_credentials}, utils::{decode_jwt, generate_jwt, AuthToken}
 };
 
-pub fn auth_scope() -> Scope {
-    web::scope("/auth")
-        .service(register_user)
-        .service(login_user)
-        .service(refresh_user_token)
-        .service(logout_user)
-        .service(get_current_user)
+#[derive(serde::Serialize, Deserialize)]
+pub struct AuthResponse {
+    pub access_token: String,
+    pub id: Uuid,
+    pub username: String,
 }
 
-#[post("/register")]
-#[tracing::instrument(name = "Registering User", skip(register_input, pool, jwt_settings))]
+pub fn auth_routes() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/login", post(login_user))
+        .route("/register", post(register_user))
+        .route("/refresh", get(refresh_user_token))
+        .route("/logout", post(logout_user))
+        .route("/current-user", get(get_current_user))
+}
+
+#[tracing::instrument(name = "Registering User", skip(input, app_state))]
 async fn register_user(
-    register_input: web::Json<UsersRegistrationInput>,
-    pool: web::Data<PgPool>,
-    jwt_settings: web::Data<JwtSettings>,
-) -> Result<HttpResponse, AppAPIError> {
-    register_input.0.credentials 
-        .validate()
-        .map_err(AppAPIError::ValidationErrors)?;
+    State(app_state): State<Arc<AppState>>,
+    Json(input): Json<RegisterFormData>,
+) -> Result<Response, AppError> {
+    let credentials = input.credentials.try_into()?;
+    let info = input.info.try_into()?;
 
-    register_input.0.info
-        .validate()
-        .map_err(AppAPIError::ValidationErrors)?;
+    let mut tx = app_state.pool.begin().await?;
 
-    let mut tx = pool
-        .begin()
-        .await
-        .context("Failed to begin transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    let id = Uuid::new_v7(Timestamp::now(NoContext));
+    create_user_from_credentials(&id, &credentials, &mut tx).await?;
+    create_users_info(&id, &info, &mut tx).await?;
+    tx.commit().await?;
 
-    let id = create_user(&register_input.0, &mut tx)
-        .await
-        .map_err(filter_app_err)?;
+    let (at, rt) = get_auth_tokens(id, &app_state.jwt_settings)?;
 
-    tx 
-        .commit()
-        .await
-        .context("Failed to execute SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
-
-    let (at, rt)= get_auth_tokens(id, &jwt_settings)?;
-
-    Ok(HttpResponse::Ok().cookie(rt).json(AuthInfo {
-        access_token: &at,
-        id,
-        username : &register_input.0.credentials.username
-    }))
+    Ok((
+        StatusCode::OK,
+        AppendHeaders([(SET_COOKIE, rt.to_string())]),
+        Json(AuthResponse {
+            id,
+            username: credentials.username,
+            access_token: at,
+        }),
+    )
+        .into_response())
 }
 
-#[post("/login")]
-#[tracing::instrument(name = "Logging User In", skip(credentials, pool, jwt_settings))]
+#[tracing::instrument(name = "Logging User In", skip(credentials, app_state))]
 async fn login_user(
-    credentials: web::Json<UserCredentials>,
-    pool: web::Data<PgPool>,
-    jwt_settings: web::Data<JwtSettings>,
-) -> Result<HttpResponse, AppAPIError> {
-    credentials
-        .0
-        .validate()
-        .map_err(AppAPIError::ValidationErrors)?;
+    State(app_state): State<Arc<AppState>>,
+    Json(credentials): Json<CredentialsFormData>,
+) -> Result<Response, AppError> {
+    let credentials = credentials.try_into()?;
+    let id = validate_user_credentials(&credentials, &app_state.pool).await?;
 
-    let user = validate_user_credentials(&credentials.0, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    let (at, rt) = get_auth_tokens(id, &app_state.jwt_settings)?;
 
-
-    let (at, rt)= get_auth_tokens(user.id, &jwt_settings)?;
-
-
-    Ok(HttpResponse::Ok().cookie(rt).json(AuthInfo {
-        access_token: &at,
-        id : user.id,
-        username:  &credentials.username
-    }))
+    Ok((
+        StatusCode::OK,
+        AppendHeaders([(SET_COOKIE, rt.to_string())]),
+        Json(AuthResponse {
+            access_token: at,
+            id,
+            username: credentials.username,
+        }),
+    )
+        .into_response())
 }
 
-#[get("/refresh")]
-#[tracing::instrument(name = "Refreshing User token.", skip(req, pool, jwt_settings))]
+#[tracing::instrument(name = "Refreshing User token.", skip(app_state, cookie))]
 async fn refresh_user_token(
-    req: HttpRequest,
-    pool: web::Data<PgPool>,
-    jwt_settings: web::Data<JwtSettings>,
-) -> Result<HttpResponse, AppAPIError> {
-    let token = req
-        .cookie("rt")
-        .context("Cookie not found.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    State(app_state): State<Arc<AppState>>,
+    TypedHeader(cookie): TypedHeader<headers::Cookie>,
+) -> Result<Response, AppError> {
+    let rt = match cookie.get("rt") {
+        Some(data) => data.to_string(),
+        None => {
+            return Err(AppError::UnauthorizedError(
+                "Refresh Token was not found.".into(),
+            ))
+        }
+    };
 
-    let token_data = decode_jwt(token.value(), &jwt_settings).map_err(filter_app_err)?;
-    let id = Uuid::try_parse(token_data.claims.id.as_str())
-        .context("Invalid user id.")
-        .map_err(AppAPIError::UnauthorizedError)?;
+    let token_data = decode_jwt(&rt, &app_state.jwt_settings)
+        .map_err(|e| AppError::UnauthorizedError(e.to_string()))?;
 
-    let user = get_user_by_id(&id, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    let user = get_user_by_id(&token_data.claims.id, &app_state.pool).await?;
 
+    let (at, rt) = get_auth_tokens(user.id, &app_state.jwt_settings)?;
 
-    let (at, rt)= get_auth_tokens(id, &jwt_settings)?;
-
-    Ok(HttpResponse::Ok()
-        .cookie(rt)
-        .json(AuthInfo {
-            access_token : &at,
-            id : user.id,
-            username : &user.username
-        }))
+    Ok((
+        StatusCode::OK,
+        AppendHeaders([(SET_COOKIE, rt.to_string())]),
+        Json(AuthResponse {
+            access_token: at,
+            id: user.id,
+            username: user.username,
+        }),
+    )
+        .into_response())
 }
 
-#[post("/logout")]
-#[tracing::instrument(name = "Logging out user", skip(req))]
-async fn logout_user(req: HttpRequest) -> Result<HttpResponse, AppAPIError> {
-    let mut cookie = req
-        .cookie("rt")
-        .context("Cookie was not found.")
-        .map_err(AppAPIError::UnauthorizedError)?;
+#[tracing::instrument(name = "Logging out user", skip(cookie))]
+async fn logout_user(
+    TypedHeader(cookie): TypedHeader<headers::Cookie>,
+) -> Result<Response, AppError> {
+    let token = match cookie.get("rt") {
+        Some(data) => data,
+        None => {
+            return Err(AppError::UnauthorizedError(
+                "Refresh Token was not found.".into(),
+            ))
+        }
+    };
 
-    cookie.make_removal();
-
-    let cookie = CookieBuilder::new("rt", cookie.value())
-        .http_only(true)
-        .same_site(actix_web::cookie::SameSite::Lax)
-        .secure(true)
+    let rt = Cookie::build(("rt", token))
         .path("/")
-        .max_age(
-            cookie
-                .max_age()
-                .context("Failed to parse the Max Age of the previous Cookie.")
-                .map_err(AppAPIError::UnexpectedError)?,
-        )
-        .finish();
+        .secure(true)
+        .http_only(true)
+        .same_site(cookie::SameSite::Lax)
+        .max_age(Duration::ZERO)
+        .build();
 
-    Ok(HttpResponse::Ok().cookie(cookie).finish())
+    Ok((
+        StatusCode::OK,
+        AppendHeaders([(SET_COOKIE, rt.to_string())]),
+    )
+        .into_response())
 }
 
-#[get("/current_user")]
 #[tracing::instrument(
     name = "Getting current authenticated user info",
-    skip(auth_token, pool)
+    skip(auth_token, app_state)
 )]
 async fn get_current_user(
     auth_token: AuthToken,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let user = get_user_by_id(&auth_token.id, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    State(app_state): State<Arc<AppState>>,
+) -> Result<Response, AppError> {
+    let user = get_user_by_id(&auth_token.id, &app_state.pool).await?;
 
-    Ok(HttpResponse::Ok().json(user))
+    Ok((StatusCode::OK, Json(user)).into_response())
 }
 
 fn get_auth_tokens(
-    user_id : Uuid,
-    jwt_settings: &JwtSettings
-) -> Result<(String, Cookie<'static>), AppAPIError>{
-    let (at, rt) = generate_jwt(&user_id.to_string(), &jwt_settings)
+    user_id: Uuid,
+    jwt_settings: &JwtSettings,
+) -> Result<(String, Cookie), AppError> {
+    let (at, rt) = generate_jwt(user_id, jwt_settings)
         .context("Failed to generate JWT")
-        .map_err(AppAPIError::UnexpectedError)?;
+        .map_err(AppError::UnexpectedError)?;
 
     let cookie = CookieBuilder::new("rt", rt)
         .http_only(true)
-        .same_site(actix_web::cookie::SameSite::Lax)
+        .same_site(cookie::SameSite::Lax)
         .path("/")
         .secure(true)
         .max_age(Duration::days(7))
-        .finish(); 
+        .build();
 
     Ok((at, cookie))
 }

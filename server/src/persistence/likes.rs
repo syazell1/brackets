@@ -67,12 +67,10 @@ pub async fn remove_like_to_post(
 
 #[tracing::instrument(name = "Checking post like", skip(post_id, user_id, pool))]
 pub async fn check_post_like(
-    post_id: &str,
-    user_id: &Uuid,
+    post_id: Uuid,
+    user_id: Uuid,
     pool: &mut Transaction<'_, Postgres>,
 ) -> Result<(), AppError> {
-    let post_id = uuid_parser(post_id)?;
-
     let query = sqlx::query!(
         r#"
             SELECT id FROM like_posts WHERE post_id = $1 AND user_id = $2
@@ -89,7 +87,7 @@ pub async fn check_post_like(
 
     match result {
         Some(_) => Ok(()),
-        None => return Err(AppError::NotFoundError(anyhow!("Post like was not found."))),
+        None => return Err(AppError::NotFoundError("Post like was not found.".into())),
     }
 }
 
@@ -217,9 +215,9 @@ pub async fn check_comment_like(
     match result {
         Some(_) => Ok(()),
         None => {
-            return Err(AppError::NotFoundError(anyhow!(
-                "Comment Like was not found."
-            )))
+            return Err(AppError::NotFoundError(
+                "Comment Like was not found.".into(),
+            ))
         }
     }
 }

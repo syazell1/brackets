@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use chrono::Utc;
 use sqlx::{Executor, PgPool, Postgres, Transaction};
 use uuid::Uuid;
@@ -9,9 +9,30 @@ use crate::{
 };
 
 #[tracing::instrument(name = "Verifying user follow status")]
+pub async fn get_user_following_status(
+    followee_id: Uuid,
+    follower_id: Uuid,
+    pool: &PgPool,
+) -> Result<bool, AppError>{
+    let result = sqlx::query!(
+        r#"
+            SELECT id FROM follows WHERE followee_id = $1 AND follower_id = $2 
+        "#,
+        followee_id,
+        follower_id
+    ).fetch_optional(pool).await?;
+
+    if result.is_none() {
+       return Ok(false);
+    };
+
+    Ok(true)
+}
+
+#[tracing::instrument(name = "Verifying user follow status")]
 pub async fn verify_user_follow_status(
-    followee_id: &Uuid,
-    follower_id: &Uuid,
+    followee_id: Uuid,
+    follower_id: Uuid,
     pool: &mut Transaction<'_, Postgres>,
 ) -> Result<(), AppError> {
     let query = sqlx::query!(
@@ -22,24 +43,20 @@ pub async fn verify_user_follow_status(
         follower_id
     );
 
-    let result = pool
-        .fetch_optional(query)
-        .await
-        .context("Failed to unfollow user.")
-        .map_err(AppError::UnexpectedError)?;
+    let result = pool.fetch_optional(query).await?;
 
     match result {
         Some(_) => Ok(()),
-        None => Err(AppError::NotFoundError(anyhow!(
-            "User following status was not found."
-        ))),
+        None => Err(AppError::NotFoundError(
+            "User following status was not found.".into(),
+        )),
     }
 }
 
 #[tracing::instrument(name = "Following user", skip(follower_id, followee_id, pool))]
 pub async fn follow_user(
-    follower_id: &Uuid,
-    followee_id: &Uuid,
+    follower_id: Uuid,
+    followee_id: Uuid,
     pool: &mut Transaction<'_, Postgres>,
 ) -> Result<(), AppError> {
     let id = Uuid::new_v4();
@@ -66,22 +83,19 @@ pub async fn follow_user(
 
 #[tracing::instrument(name = "Unfollowing user", skip(follower_id, followee_id, pool))]
 pub async fn unfollow_user(
-    follower_id: &Uuid,
-    followee_id: &Uuid,
+    follower_id: Uuid,
+    followee_id: Uuid,
     pool: &mut Transaction<'_, Postgres>,
 ) -> Result<(), AppError> {
     let query = sqlx::query!(
         r#"
             DELETE FROM follows WHERE followee_id = $1 AND follower_id = $2 
         "#,
-        follower_id,
         followee_id,
+        follower_id
     );
 
-    pool.execute(query)
-        .await
-        .context("Failed to unfollow user.")
-        .map_err(AppError::UnexpectedError)?;
+    pool.execute(query).await?;
 
     Ok(())
 }

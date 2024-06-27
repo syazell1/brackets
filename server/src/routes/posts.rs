@@ -1,243 +1,211 @@
-use actix_web::{get, patch, post, web, HttpResponse, Scope};
+use std::sync::Arc;
+
 use anyhow::{anyhow, Context};
-use sqlx::PgPool;
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    routing::{get, patch, post},
+    Json, Router,
+};
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
-    app::{
-        add_like_to_post, check_post_like, create_users_posts, get_all_posts, get_liked_posts,
-        get_post_by_id, manage_users_posts, remove_like_to_post, update_users_posts,
-        verify_posts_by_id, verify_users_posts_by_id,
-    },
-    errors::AppAPIError,
-    models::{PageFilters, PostLikeIds, PostStatusPath, PostsInput},
-    utils::{filter_app_err, uuid_parser, AuthToken},
+    app_state::AppState, domains::{Post, UpdatePostTo}, errors::AppError, models::{PageFilters, PostLikeIds, PostPageFilters, PostStatusPath, PostsInput}, persistence::{
+        add_like_to_post, check_post_like, create_users_post, fetch_posts_comments, get_all_posts, get_liked_posts, get_post_by_id, manage_users_posts, remove_like_to_post, update_users_posts, verify_posts_by_id, verify_user_by_id_tx, verify_users_posts_by_id
+    }, utils::{uuid_parser, AuthToken}
 };
 
-use super::get_posts_comments;
-
-pub fn posts_scope() -> Scope {
-    web::scope("/posts")
-        .service(create_posts)
-        .service(update_posts)
-        .service(manage_posts)
-        .service(fetch_all_posts)
-        .service(fetch_post_by_id)
-        .service(get_posts_comments)
-        .service(like_post)
-        .service(unlike_post)
-        .service(fetch_posts_like_status)
+pub fn post_routes() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/", post(create_post))
+        .route("/:id", patch(update_post))
+        .route("/:id/:command", patch(manage_post))
+        .route("/", get(fetch_all_posts))
+        .route("/:id", get(fetch_post_by_id))
+        .route("/:id/like", post(like_post))
+        .route("/:id/unlike", post(unlike_post))
+        .route("/check-likes", post(fetch_posts_like_status))
+        .route("/:id/comments", get(get_posts_comments))
 }
 
-#[post("")]
-#[tracing::instrument(name = "Adding Posts", skip(auth_token, posts, pool))]
-async fn create_posts(
+#[tracing::instrument(name = "Adding Post", skip(auth_token, app_state, post))]
+async fn create_post(
     auth_token: AuthToken,
-    posts: web::Json<PostsInput>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    posts.0.validate().map_err(AppAPIError::ValidationErrors)?;
+    State(app_state): State<Arc<AppState>>,
+    Json(post): Json<PostsInput>,
+) -> Result<Response, AppError> {
+    let post : Post = post.try_into()?;
+    post.validate()?;
+    let mut tx = app_state.pool.begin().await?;
+    verify_user_by_id_tx(auth_token.id, &mut tx).await?;
+    create_users_post(&auth_token.id, &post, &mut tx).await?;
+    tx.commit().await?;
 
-    create_users_posts(&auth_token.id, &posts, &pool)
-        .await
-        .map_err(filter_app_err)?;
-
-    Ok(HttpResponse::Created().finish())
+    Ok((StatusCode::CREATED).into_response())
 }
 
-#[patch("/{id}")]
-#[tracing::instrument(name = "Updating Posts", skip(post_id, auth_token, posts, pool))]
-async fn update_posts(
-    post_id: web::Path<String>,
+#[tracing::instrument(name = "Updating Posts", skip(id, auth_token, app_state, post))]
+async fn update_post(
     auth_token: AuthToken,
-    posts: web::Json<PostsInput>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let id = Uuid::try_parse(&post_id)
-        .context("Invalid Id.")
-        .map_err(AppAPIError::NotFoundError)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(post): Json<PostsInput>,
+) -> Result<Response, AppError> {
+    let id = uuid_parser(&id)?;
 
-    posts.0.validate().map_err(AppAPIError::ValidationErrors)?;
+    let post = post.try_update_into(&id)?;
+    
+    let mut tx = app_state.pool.begin().await?;
 
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to initialize SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    verify_users_posts_by_id(post.id, auth_token.id, &mut tx).await?;
 
-    verify_users_posts_by_id(&post_id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    update_users_posts(&auth_token.id, &post, &mut tx).await?;
 
-    update_users_posts(&id, &auth_token.id, &posts.0, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    tx.commit().await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to execute SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
-
-    Ok(HttpResponse::NoContent().finish())
+    Ok((StatusCode::NO_CONTENT).into_response())
 }
 
-#[patch("/{id}/{command}")]
-#[tracing::instrument(name = "Updating Post Status", skip(post_status, auth_token, pool))]
-async fn manage_posts(
-    post_status: web::Path<PostStatusPath>,
+// #[patch("/{id}/{command}")]
+#[tracing::instrument(
+    name = "Updating Post Status",
+    skip(auth_token, app_state, post_status)
+)]
+async fn manage_post(
     auth_token: AuthToken,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
+    State(app_state): State<Arc<AppState>>,
+    Path(post_status): Path<PostStatusPath>,
+) -> Result<Response, AppError> {
     let id = Uuid::try_parse(&post_status.id)
         .context("Invalid Id.")
-        .map_err(AppAPIError::BadRequestError)?;
+        .map_err(AppError::BadRequestError)?;
 
     let is_delete = if post_status.command.to_lowercase().eq("delete") {
         true
     } else if post_status.command.to_lowercase().eq("restore") {
         false
     } else {
-        return Err(AppAPIError::BadRequestError(anyhow::anyhow!(
+        return Err(AppError::BadRequestError(anyhow::anyhow!(
             "Invalid Command."
         )));
     };
 
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to initialize SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    let mut tx = app_state.pool.begin().await?;
 
-    verify_users_posts_by_id(&post_status.id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    verify_users_posts_by_id(id, auth_token.id, &mut tx).await?;
 
-    manage_users_posts(is_delete, &id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    manage_users_posts(is_delete, &id, &auth_token.id, &mut tx).await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to execute SQL Transactions.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    tx.commit().await?;
 
-    Ok(HttpResponse::NoContent().finish())
+    Ok((StatusCode::NO_CONTENT).into_response())
 }
 
-#[get("")]
-#[tracing::instrument(name = "Fetching ALl Posts", skip(page_filters, pool))]
+// #[get("")]
+#[tracing::instrument(name = "Fetching All Posts", skip(page_filters, app_state))]
 async fn fetch_all_posts(
-    page_filters: web::Query<PageFilters>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let result = get_all_posts(
-        &page_filters,
-        &pool,
-    )
-    .await
-    .map_err(filter_app_err)?;
+    State(app_state): State<Arc<AppState>>,
+    Query(page_filters): Query<PostPageFilters>,
+) -> Result<Response, AppError> {
+    let result = get_all_posts(&page_filters, &app_state.pool).await?;
 
-    Ok(HttpResponse::Ok().json(result))
+    Ok((StatusCode::OK, Json(result)).into_response())
 }
 
-#[get("/{id}")]
-#[tracing::instrument(name = "Fetching Posts", skip(id, pool))]
+// #[get("/{id}")]
+#[tracing::instrument(name = "Fetching Post By Id", skip(id, app_state))]
 async fn fetch_post_by_id(
-    id: web::Path<String>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let post_id = uuid_parser(&id).map_err(filter_app_err)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let post_id = uuid_parser(&id)?;
 
-    let result = get_post_by_id(&post_id, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    let result = get_post_by_id(&post_id, &app_state.pool).await?;
 
-    Ok(HttpResponse::Ok().json(result))
+    Ok((StatusCode::OK, Json(result)).into_response())
 }
 
-#[post("/{id}/like")]
-#[tracing::instrument(name = "Liking a post", skip(auth_token, id, pool))]
+// #[post("/{id}/like")]
+#[tracing::instrument(name = "Liking a post", skip(auth_token, id, app_state))]
 async fn like_post(
     auth_token: AuthToken,
-    id: web::Path<String>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to initialize SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let post_id = uuid_parser(&id)?;
 
-    verify_posts_by_id(&id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    let mut tx = app_state.pool.begin().await?;
 
-    if (check_post_like(&id, &auth_token.id, &mut transaction).await).is_ok() {
-        return Err(AppAPIError::BadRequestError(anyhow!(
-            "Post was already liked"
-        )));
+    verify_posts_by_id(post_id, &mut tx).await?;
+
+    if (check_post_like(post_id, auth_token.id, &mut tx).await).is_ok() {
+        return Err(AppError::BadRequestError(anyhow!("Post was already liked")));
     };
 
-    add_like_to_post(&id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    add_like_to_post(&id, &auth_token.id, &mut tx).await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to commit SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    tx.commit().await?;
 
-    Ok(HttpResponse::Ok().finish())
+    Ok((StatusCode::OK).into_response())
 }
 
-#[post("/{id}/unlike")]
-#[tracing::instrument(name = "Unlike a post", skip(auth_token, id, pool))]
+// #[post("/{id}/unlike")]
+#[tracing::instrument(name = "Unlike a post", skip(auth_token, id, app_state))]
 async fn unlike_post(
     auth_token: AuthToken,
-    id: web::Path<String>,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let mut transaction = pool
-        .begin()
-        .await
-        .context("Failed to initialize SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<Response, AppError> {
+    let post_id = uuid_parser(&id)?;
 
-    verify_posts_by_id(&id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    let mut tx = app_state.pool.begin().await?;
 
-    check_post_like(&id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    verify_posts_by_id(post_id, &mut tx).await?;
 
-    remove_like_to_post(&id, &auth_token.id, &mut transaction)
-        .await
-        .map_err(filter_app_err)?;
+    check_post_like(post_id, auth_token.id, &mut tx).await?;
 
-    transaction
-        .commit()
-        .await
-        .context("Failed to commit SQL Transaction.")
-        .map_err(AppAPIError::UnexpectedError)?;
+    remove_like_to_post(&id, &auth_token.id, &mut tx).await?;
 
-    Ok(HttpResponse::Ok().finish())
+    tx.commit().await?;
+
+    Ok((StatusCode::OK).into_response())
 }
 
-#[post("/check-likes")]
-#[tracing::instrument(name = "Fetching posts like status", skip(posts, auth_token, pool))]
+// #[post("/check-likes")]
+#[tracing::instrument(name = "Fetching post like status", skip(posts, auth_token, app_state))]
 async fn fetch_posts_like_status(
-    posts: web::Json<PostLikeIds>,
     auth_token: AuthToken,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AppAPIError> {
-    let result = get_liked_posts(&posts, &auth_token.id, &pool)
-        .await
-        .map_err(filter_app_err)?;
+    State(app_state): State<Arc<AppState>>,
+    Json(posts): Json<PostLikeIds>,
+) -> Result<Response, AppError> {
+    let result = get_liked_posts(&posts, &auth_token.id, &app_state.pool).await?;
 
-    Ok(HttpResponse::Ok().json(result))
+    Ok((StatusCode::OK, Json(result)).into_response())
+}
+
+// #[get("/{id}/comments")]
+#[tracing::instrument(name = "Fetchign Post's Comments", skip(id, page_filters, app_state))]
+pub async fn get_posts_comments(
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Query(page_filters): Query<PageFilters>,
+) -> Result<Response, AppError> {
+    let post_id = uuid_parser(&id)?;
+    let mut tx = app_state.pool.begin().await?;
+
+    verify_posts_by_id(post_id, &mut tx).await?;
+
+    tx.commit().await?;
+
+    let result = fetch_posts_comments(
+        post_id,
+        page_filters.page.unwrap_or(1),
+        page_filters.page_size.unwrap_or(10),
+        &app_state.pool,
+    )
+    .await?;
+
+    Ok((StatusCode::OK, Json(result)).into_response())
 }

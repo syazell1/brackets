@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use chrono::Utc;
 use sqlx::{Executor, PgPool, Postgres, Transaction};
 use uuid::Uuid;
@@ -103,8 +103,8 @@ pub async fn delete_comments_by_id(
     skip(comment_id, user_id, pool)
 )]
 pub async fn verify_comments_by_user_id(
-    comment_id: &Uuid,
-    user_id: &Uuid,
+    comment_id: Uuid,
+    user_id: Uuid,
     pool: &mut Transaction<'_, Postgres>,
 ) -> Result<(), AppError> {
     let query = sqlx::query!(
@@ -123,7 +123,7 @@ pub async fn verify_comments_by_user_id(
 
     match result {
         Some(_) => Ok(()),
-        None => Err(AppError::NotFoundError(anyhow!("Comment was not found."))),
+        None => Err(AppError::NotFoundError("Comment was not found.".into())),
     }
 }
 
@@ -149,23 +149,17 @@ pub async fn verify_comments_by_id(
 
     match result {
         Some(_) => Ok(()),
-        None => {
-            return Err(AppError::NotFoundError(anyhow::anyhow!(
-                "Comment was not found."
-            )))
-        }
+        None => Err(AppError::NotFoundError("Comment was not found.".into())),
     }
 }
 
 #[tracing::instrument(name = "Fetching post's comments from the database")]
 pub async fn fetch_posts_comments(
-    post_id: &str,
+    post_id: Uuid,
     current_page: u32,
     page_size: u32,
     pool: &PgPool,
 ) -> Result<PageList<Vec<CommentData>>, AppError> {
-    let post_id = uuid_parser(post_id)?;
-
     let next_page = page_size * (current_page - 1);
 
     let result = sqlx::query_as!(
